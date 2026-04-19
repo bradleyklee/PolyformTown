@@ -1,3 +1,4 @@
 *.o
+*.orig
 mono_count
 mono_dump

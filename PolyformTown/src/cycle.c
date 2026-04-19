@@ -156,16 +156,24 @@ static void poly_prepare_cycles(Poly *p) {
     for (int i = 1; i < p->cycle_count; i++) {
         if (cycle_abs_area_cmp_desc(&p->cycles[i], &p->cycles[outer])) outer = i;
     }
+
+    if (outer != 0) {
+        Cycle tmp = p->cycles[0];
+        p->cycles[0] = p->cycles[outer];
+        p->cycles[outer] = tmp;
+    }
+
     for (int i = 0; i < p->cycle_count; i++) {
         long long area = cycle_signed_area2(&p->cycles[i]);
-        if (i == outer) {
+        if (i == 0) {
             if (area < 0) cycle_reverse(&p->cycles[i]);
         } else {
             if (area > 0) cycle_reverse(&p->cycles[i]);
         }
         cycle_canonicalize_shift(&p->cycles[i]);
     }
-    for (int i = 0; i < p->cycle_count; i++) {
+
+    for (int i = 1; i < p->cycle_count; i++) {
         for (int j = i + 1; j < p->cycle_count; j++) {
             if (cycle_less(&p->cycles[j], &p->cycles[i])) {
                 Cycle tmp = p->cycles[i];
