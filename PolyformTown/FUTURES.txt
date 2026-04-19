@@ -1,0 +1,206 @@
+PROJECT ROADMAP (EDGE-BASED POLYFORM ENGINE)
+
+This file defines the approved next steps. Do NOT skip ahead or introduce unrelated features.
+
+------------------------------------------------------------
+
+CURRENT BASELINE
+
+- Monomino generator complete
+- Edge-based representation (ordered cycles)
+- Matches OEIS A000104 (no-hole polyominoes)
+- Corner-pairing rule implemented:
+  → maximize cycle count
+  → reject if cycle_count > 1
+
+This is the reference state. Do not regress it.
+
+------------------------------------------------------------
+
+NEXT STEP 1: ENABLE HOLES (SWITCHABLE MODE)
+
+Goal:
+- Extend engine to support shapes WITH holes
+
+Add:
+- flag: allow_holes = 0 (default)
+
+Behavior:
+
+NO-HOLE MODE:
+  maximize cycles
+  if cycle_count > 1 → reject
+
+HOLE MODE:
+  maximize cycles
+  keep ALL cycles
+
+No changes to:
+- attachment logic
+- validation logic
+- edge cancellation
+
+------------------------------------------------------------
+
+NEXT STEP 2: MULTI-CYCLE SHAPE SUPPORT
+
+Upgrade Shape:
+
+Shape = {
+  Cycle outer;
+  int hole_count;
+  Cycle holes[];
+}
+
+After merge:
+- identify all cycles
+- classify:
+
+  largest-area cycle → outer (CCW)
+  all others → holes (CW)
+
+Use shoelace formula (exact integer arithmetic)
+
+------------------------------------------------------------
+
+NEXT STEP 3: CANONICALIZATION WITH HOLES
+
+Canonical form:
+
+[outer_cycle ; hole1 ; hole2 ; ...]
+
+Procedure:
+1. canonicalize each cycle (cyclic shift)
+2. enforce orientation:
+   - outer = CCW
+   - holes = CW
+3. sort holes lexicographically
+4. apply full symmetry group:
+   - rotations
+   - reflections
+   - after reflection → reverse cycle directions
+
+------------------------------------------------------------
+
+NEXT STEP 4: VERIFY AGAINST A000105
+
+Target (polyominoes WITH holes):
+
+n:    1   2   3   4   5   6    7    8    9    10
+count 1   1   2   5   12  35   108  369  1285 4655
+
+Must match exactly.
+
+This validates:
+- hole handling
+- cycle classification
+- canonicalization
+
+------------------------------------------------------------
+
+NEXT STEP 5: GENERATE DOMINO TEST DATA
+
+Goal:
+- derive expected domino counts from monomino data
+
+Procedure:
+
+1. run monomino engine (HOLE MODE)
+2. dump all shapes at size 2n
+3. for each shape:
+   - test domino tileability
+4. count tileable shapes
+
+This produces:
+  expected_domino(n)
+
+This is the reference for domino engine validation.
+
+------------------------------------------------------------
+
+NEXT STEP 6: DOMINO SUPPORT
+
+Goal:
+- extend engine to domino tiles
+
+Tile requirements:
+- boundary defined with UNIT edges only
+- no long edges (must include intermediate vertices)
+
+Attachment changes:
+- tile may have multiple candidate edges
+- must test all valid edge matches
+
+Validation remains unchanged.
+
+------------------------------------------------------------
+
+NEXT STEP 7: TILE FILE INPUT
+
+Goal:
+- move all tile definitions to external files
+
+Tile file must:
+- define boundary cycle
+- use unit edges
+- be oriented CCW
+
+System must:
+- load tile
+- generate symmetry variants
+- normalize orientation after reflection
+
+------------------------------------------------------------
+
+NEXT STEP 8: GENERALIZED GEOMETRY
+
+Goal:
+- support non-square lattices (hex, triangular, etc.)
+
+Requirements:
+- exact coordinate system (e.g. Z[√3])
+- no floating point arithmetic
+- generalized direction ordering at vertices
+
+------------------------------------------------------------
+
+NEXT STEP 9: ADVANCED TILINGS (HAT / SPECTRE)
+
+Goal:
+- apply engine to aperiodic tilings
+
+Requires:
+- custom tile definitions
+- custom adjacency rules
+- possibly nontrivial coordinate systems
+
+------------------------------------------------------------
+
+GUIDING PRINCIPLES
+
+- Edge-based representation ONLY
+- No cell-based fallback
+- Exact arithmetic only
+- Preserve cycle structure at all times
+- Local rules determine global topology
+
+------------------------------------------------------------
+
+DO NOT DO
+
+- Do not introduce floating point geometry
+- Do not implement full polygon clipping prematurely
+- Do not skip hole support before domino
+- Do not break A000104 baseline
+
+------------------------------------------------------------
+
+END STATE
+
+A general engine for:
+- arbitrary tile-based polyforms
+- exact combinatorial geometry
+- extensible to multiple lattices
+- capable of handling holes and complex tilings
+
+------------------------------------------------------------
