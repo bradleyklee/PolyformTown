@@ -1,0 +1,3 @@
+*.o
+mono_count
+mono_dump
