@@ -3,7 +3,7 @@ Perform one more quality-control pass for refinement:
 - simplify code where possible without altering behavior
 
 Ensure all changes are complete, tested, and consistent
-with known data and the human's specific requests.
+with known data and the human’s specific requests.
 
 Do not leave partial edits or unverified changes.
 
@@ -15,7 +15,7 @@ Update:
 Leave the codebase in a stable, reproducible state.
 
 Deliver a final patch or zip relative to the session’s
-initial input. 
+initial input.
 
-Listen for the human's approval, and prepare to try 
-again in case of an accidental failure.  
+Listen for the human’s approval, and be prepared to
+iterate again in case of failure.

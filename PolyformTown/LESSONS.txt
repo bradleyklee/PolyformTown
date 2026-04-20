@@ -1,138 +1,112 @@
 PROJECT CONTEXT: EDGE-BASED POLYFORM ENGINE (MONOMINO, WITH HOLES)
 
-This project implements polyomino generation using EDGE GEOMETRY, not cell occupancy.
-
-IMPORTANT: Do NOT revert to cell-based representations. This code is explicitly designed
-to keep the geometry in boundary cycles so it can extend to dominoes and later tilings.
+Polyominoes are generated using edge geometry with ordered
+boundary cycles. Cell-based representations are not used.
 
 ------------------------------------------------------------
 
 CURRENT STATUS
 
-- Monomino generator is COMPLETE in hole mode and matches OEIS A000105
-- Verified correct through at least n = 11 here, and through n = 12 in user testing
-- Dump hole counts verified:
-  - n = 7 -> 1
-  - n = 8 -> 6
-- Implementation uses:
-  - ordered boundary cycles
-  - edge cancellation (antiparallel)
-  - multi-cycle shapes (outer + holes)
-  - hash-based deduplication
-  - canonicalization under rotation + reflection
+- Monomino generator complete (hole mode)
+- Matches OEIS A000105
+- Verified through n >= 12
+- Hole counts:
+  n = 7 -> 1
+  n = 8 -> 6
 
 ------------------------------------------------------------
 
 CORE REPRESENTATION
 
-Shape = Poly
-
 Poly:
-- one outer boundary cycle
+- one outer cycle
 - zero or more hole cycles
 
 Cycle:
-- ordered list of vertices (lattice points)
-- edges are implicitly unit-length between consecutive vertices
-- no duplicate vertices are allowed inside a valid scanned cycle
-
-Edge soup representation is NOT used.
+- ordered list of lattice vertices
+- unit-length edges
+- no duplicate vertices within a valid cycle
 
 ------------------------------------------------------------
 
 KEY INVARIANTS
 
-1. All edges are unit length
-2. Cycles are ordered (not unordered edge sets)
-3. A valid Poly is a set of simple cycles
-4. No floating point arithmetic (integer lattice only)
-5. All cycles must be transformed together during canonicalization
-6. Outer cycle = maximum absolute signed area
-7. Canonical form = [outer] + sorted(holes)
-8. Outer orientation = CCW
-9. Hole orientation = CW
+- All edges are unit length
+- Cycles are ordered
+- Poly is a set of simple cycles
+- No floating point arithmetic
+
+- Outer = maximum absolute signed area
+- Outer orientation = CCW
+- Hole orientation = CW
+- Canonical form = [outer] + sorted(holes)
+
+- All cycles transform together
 
 ------------------------------------------------------------
 
 ATTACHMENT MODEL
 
-Tile (currently monomino) is defined by a boundary cycle.
+- Align antiparallel edges
+- Cancel antiparallel overlaps
+- Reject parallel overlaps
+- Walk remaining edges into cycles
 
-Attachment procedure:
-1. Select base edge and tile edge (must be antiparallel)
-2. Align tile onto base
-3. Detect coincident edges:
-   - antiparallel -> cancel
-   - parallel -> reject
-4. Walk remaining edges into cycles
-5. If a duplicate vertex appears while scanning a cycle,
-   retry the ambiguous turn with the opposite choice
-6. Keep all resulting cycles
-7. Canonicalize Poly
-8. Deduplicate in hash table
+Ambiguous vertex rule:
+- If duplicate vertex appears during traversal,
+  retry with opposite turn choice
+
+- Keep all resulting cycles
 
 ------------------------------------------------------------
 
-CRITICAL TOPOLOGY LESSON
+CRITICAL TOPOLOGY RULE
 
-At ambiguous 4-valent turning vertices, a fixed global turn rule is not enough.
-The correct practical discriminator in this version is:
+Duplicate vertices inside a cycle indicate incorrect
+turn resolution.
 
--> no duplicate vertices inside a scanned cycle
--> if duplicate occurs, retry with the opposite turn choice
-
-This allows the engine to keep hole-producing configurations correctly.
+Correct behavior:
+- retry alternate turn
+- accept configuration if resulting cycles are valid
 
 ------------------------------------------------------------
 
 CANONICALIZATION
 
-Do this exactly once at insertion into the next level:
+Performed once:
 
-    attach -> extract cycles -> build Poly -> canonicalize Poly -> hash/store
+attach → extract cycles → build Poly → canonicalize → store
 
-Canonicalization procedure:
-1. Apply one symmetry to ALL cycles together
-2. Normalize translation once for the whole Poly
-3. Identify outer cycle by maximum absolute signed area
-4. Force orientations:
-   - outer = CCW
-   - holes = CW
-5. Canonicalize cyclic shift within each cycle
-6. Keep outer first
-7. Sort only the holes lexicographically
-8. Choose the lexicographically minimal transformed Poly
+Procedure:
+- apply symmetry to all cycles together
+- normalize translation once
+- identify outer by maximum area
+- enforce orientations (outer CCW, holes CW)
+- canonicalize cyclic shifts
+- keep outer first
+- sort holes only
+- choose lexicographically minimal Poly
 
-Important bug fix from V2.1.1:
-- Do NOT sort all cycles together lexicographically
-- That can move a hole before the outer cycle in dumps and canonical form
-- Correct rule is:
-
-    Poly = [outer] + sorted(holes)
+Do NOT sort all cycles together.
 
 ------------------------------------------------------------
 
 FRONTIER RULE
 
-Frontier scanning must include edges from ALL cycles:
-- outer boundary
-- hole boundaries
-
-Without this, A000105 descendants are missed.
+Frontier includes edges from all cycles:
+- outer
+- holes
 
 ------------------------------------------------------------
 
 DUMP FORMAT
 
-mono_dump prints:
+mono_dump:
 
-    <0|1> cycle0 | cycle1 | ...
+<0|1> cycle0 | cycle1 | ...
 
-where:
-- 0 = no holes
-- 1 = has holes
-
-The outer cycle must print first.
+- outer cycle prints first
+- 1 indicates presence of holes
 
 ------------------------------------------------------------
 
@@ -143,30 +117,22 @@ A000105:
 n:     1  2  3  4   5   6    7    8    9    10    11
 count  1  1  2  5  12  35  108  369  1285  4655  17073
 
-Hole dump checks:
+Hole checks:
 - n = 7 -> 1
 - n = 8 -> 6
-
-The first holey n = 7 polyomino is not a full 3x3 ring.
-It is the 3x3 ring with one corner cell removed.
 
 ------------------------------------------------------------
 
 WHAT NOT TO DO
 
-- Do NOT introduce floating point math
-- Do NOT revert to cell occupancy
-- Do NOT transform cycles independently during canonicalization
-- Do NOT sort all cycles together and lose outer-first ordering
-- Do NOT canonicalize repeatedly at multiple stages
+- No floating point
+- No cell-based model
+- No independent cycle transforms
+- No sorting all cycles together
+- No repeated canonicalization
 
 ------------------------------------------------------------
 
 NEXT PHASE
 
 V2.2: domino tile support
-
-The current engine is the correct base for that extension.
-Preserve the multi-cycle Poly representation and the whole-Poly canonicalization model.
-
-------------------------------------------------------------
