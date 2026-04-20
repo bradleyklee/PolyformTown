@@ -4,16 +4,16 @@ SRC = src
 
 CORE = $(SRC)/cycle.o $(SRC)/tile.o $(SRC)/hash.o $(SRC)/vec.o $(SRC)/attach.o
 
-all: mono_count mono_dump
+all: poly_count poly_print
 
-mono_count: $(SRC)/main_mono.o $(CORE)
-	$(CC) $(CFLAGS) -o $@ $(SRC)/main_mono.o $(CORE)
+poly_count: $(SRC)/count_poly.o $(CORE)
+	$(CC) $(CFLAGS) -o $@ $(SRC)/count_poly.o $(CORE)
 
-mono_dump: $(SRC)/dump_mono.o $(CORE)
-	$(CC) $(CFLAGS) -o $@ $(SRC)/dump_mono.o $(CORE)
+poly_print: $(SRC)/print_poly.o $(CORE)
+	$(CC) $(CFLAGS) -o $@ $(SRC)/print_poly.o $(CORE)
 
 $(SRC)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) -I$(SRC) -c $< -o $@
 
 clean:
-	rm -f $(SRC)/*.o mono_count mono_dump
+	rm -f $(SRC)/*.o poly_count poly_print

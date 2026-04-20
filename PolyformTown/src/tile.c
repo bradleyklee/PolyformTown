@@ -41,17 +41,30 @@ int tile_load(const char *path, Tile *tile) {
 
 void tile_build_variants(Tile *tile) {
     tile->variant_count = 0;
-    for (int t = 0; t < 8; t++) {
-        Cycle c, canon;
-        cycle_transform(&tile->base, &c, t);
+
+    {
+        Cycle c = tile->base;
         if (cycle_signed_area2(&c) < 0) cycle_reverse(&c);
-        cycle_canonicalize(&c, &canon);
+        cycle_normalize_position(&c);
+        cycle_canonicalize_shift(&c);
+        tile->variants[tile->variant_count++] = c;
+    }
+
+    {
+        Cycle r;
+        cycle_transform(&tile->base, &r, 4);
+        if (cycle_signed_area2(&r) < 0) cycle_reverse(&r);
+        cycle_normalize_position(&r);
+        cycle_canonicalize_shift(&r);
+
         int dup = 0;
         for (int i = 0; i < tile->variant_count; i++) {
-            if (!cycle_less(&canon, &tile->variants[i]) && !cycle_less(&tile->variants[i], &canon)) {
-                dup = 1; break;
+            if (!cycle_less(&r, &tile->variants[i]) &&
+                !cycle_less(&tile->variants[i], &r)) {
+                dup = 1;
+                break;
             }
         }
-        if (!dup) tile->variants[tile->variant_count++] = canon;
+        if (!dup) tile->variants[tile->variant_count++] = r;
     }
 }

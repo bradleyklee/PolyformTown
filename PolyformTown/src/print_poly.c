@@ -7,7 +7,7 @@
 #include "vec.h"
 
 int main(int argc, char **argv) {
-    int max_n = 10;
+    int max_n = 5;
     const char *tile_path = "tiles/monomino.tile";
     if (argc > 1) max_n = atoi(argv[1]);
     if (argc > 2) tile_path = argv[2];
@@ -31,9 +31,10 @@ int main(int argc, char **argv) {
     vec_push(&cur, &seed);
 
     for (int level = 1; level <= max_n; level++) {
-        printf("n=%d count=%zu\n", level, cur.count);
-        fflush(stdout);
-        if (level == max_n) break;
+        if (level == max_n) {
+            for (size_t i = 0; i < cur.count; i++) poly_print_edges(&cur.data[i]);
+            break;
+        }
 
         HashTable seen;
         hash_init(&seen, 1024);
@@ -42,12 +43,15 @@ int main(int argc, char **argv) {
         for (size_t i = 0; i < cur.count; i++) {
             Edge frontier[MAX_VERTS * MAX_CYCLES];
             int fc = build_frontier_edges(&cur.data[i], frontier);
-            for (int be = 0; be < fc; be++) {
-                for (int te = 0; te < tile.base.n; te++) {
-                    Poly grown, canon;
-                    if (!try_attach_tile_poly(&cur.data[i], &tile.base, be, te, &grown)) continue;
-                    poly_canonicalize(&grown, &canon);
-                    if (hash_insert(&seen, &canon)) vec_push(&next, &canon);
+            for (int v = 0; v < tile.variant_count; v++) {
+                const Cycle *tv = &tile.variants[v];
+                for (int be = 0; be < fc; be++) {
+                    for (int te = 0; te < tv->n; te++) {
+                        Poly grown, canon;
+                        if (!try_attach_tile_poly(&cur.data[i], tv, be, te, &grown)) continue;
+                        poly_canonicalize(&grown, &canon);
+                        if (hash_insert(&seen, &canon)) vec_push(&next, &canon);
+                    }
                 }
             }
         }
