@@ -1,0 +1,2 @@
+Interior cycles must be holes, not intersections; reject invalid
+configurations.

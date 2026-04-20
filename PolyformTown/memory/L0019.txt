@@ -1,0 +1,3 @@
+Normalize translation, identify outer by area, enforce orientations,
+canonicalize cyclic shifts, sort holes, choose minimal lexicographic
+Poly.

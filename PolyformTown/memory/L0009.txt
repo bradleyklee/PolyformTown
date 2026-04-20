@@ -1,0 +1,2 @@
+A valid cycle is an ordered sequence of lattice vertices with unit-
+length edges and no duplicate vertices.

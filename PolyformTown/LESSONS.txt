@@ -1,138 +1,30 @@
-PROJECT CONTEXT: EDGE-BASED POLYFORM ENGINE (MONOMINO, WITH HOLES)
+This file is a priority-ordered index into memory/. Each
+line references a single lesson file; earlier lines have
+higher priority and should be loaded first into context.
+Lesson files are atomic and stable, while priority is
+controlled solely by reordering this index.
 
-Polyominoes are generated using edge geometry with ordered
-boundary cycles. Cell-based representations are not used.
-
-------------------------------------------------------------
-
-CURRENT STATUS
-
-- Monomino generator complete (hole mode)
-- Matches OEIS A000105
-- Verified through n >= 12
-- Hole counts:
-  n = 7 -> 1
-  n = 8 -> 6
-
-------------------------------------------------------------
-
-CORE REPRESENTATION
-
-Poly:
-- one outer cycle
-- zero or more hole cycles
-
-Cycle:
-- ordered list of lattice vertices
-- unit-length edges
-- no duplicate vertices within a valid cycle
-
-------------------------------------------------------------
-
-KEY INVARIANTS
-
-- All edges are unit length
-- Cycles are ordered
-- Poly is a set of simple cycles
-- No floating point arithmetic
-
-- Outer = maximum absolute signed area
-- Outer orientation = CCW
-- Hole orientation = CW
-- Canonical form = [outer] + sorted(holes)
-
-- All cycles transform together
-
-------------------------------------------------------------
-
-ATTACHMENT MODEL
-
-- Align antiparallel edges
-- Cancel antiparallel overlaps
-- Reject parallel overlaps
-- Walk remaining edges into cycles
-
-Ambiguous vertex rule:
-- If duplicate vertex appears during traversal,
-  retry with opposite turn choice
-
-- Keep all resulting cycles
-
-------------------------------------------------------------
-
-CRITICAL TOPOLOGY RULE
-
-Duplicate vertices inside a cycle indicate incorrect
-turn resolution.
-
-Correct behavior:
-- retry alternate turn
-- accept configuration if resulting cycles are valid
-
-------------------------------------------------------------
-
-CANONICALIZATION
-
-Performed once:
-
-attach → extract cycles → build Poly → canonicalize → store
-
-Procedure:
-- apply symmetry to all cycles together
-- normalize translation once
-- identify outer by maximum area
-- enforce orientations (outer CCW, holes CW)
-- canonicalize cyclic shifts
-- keep outer first
-- sort holes only
-- choose lexicographically minimal Poly
-
-Do NOT sort all cycles together.
-
-------------------------------------------------------------
-
-FRONTIER RULE
-
-Frontier includes edges from all cycles:
-- outer
-- holes
-
-------------------------------------------------------------
-
-DUMP FORMAT
-
-mono_dump:
-
-<0|1> cycle0 | cycle1 | ...
-
-- outer cycle prints first
-- 1 indicates presence of holes
-
-------------------------------------------------------------
-
-TEST TARGETS
-
-A000105:
-
-n:     1  2  3  4   5   6    7    8    9    10    11
-count  1  1  2  5  12  35  108  369  1285  4655  17073
-
-Hole checks:
-- n = 7 -> 1
-- n = 8 -> 6
-
-------------------------------------------------------------
-
-WHAT NOT TO DO
-
-- No floating point
-- No cell-based model
-- No independent cycle transforms
-- No sorting all cycles together
-- No repeated canonicalization
-
-------------------------------------------------------------
-
-NEXT PHASE
-
-V2.2: domino tile support
+L0001 Work from data
+L0002 No fabrication
+L0003 No false execution
+L0004 One-file discipline
+L0005 Patch rule
+L0006 Integer model
+L0007 Representation model
+L0008 Poly structure
+L0009 Cycle validity
+L0010 Transform scope
+L0011 Outer selection
+L0012 Orientation
+L0013 Canonical form
+L0014 Attachment rules
+L0015 Chiral tiles
+L0022 Frontier rule
+L0016 Cycle extraction and validation
+L0017 Interior validation
+L0018 Canonicalization pipeline
+L0019 Canonicalization rules
+L0020 Hashing
+L0021 Prohibited operations
+L0023 Print format
+L0024 Failure modes

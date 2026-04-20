@@ -1,0 +1,2 @@
+The frontier includes edges from all cycles including outer and holes
+and must be fully considered during growth.

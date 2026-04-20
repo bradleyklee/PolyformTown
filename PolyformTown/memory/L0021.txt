@@ -1,0 +1,2 @@
+Do not sort all cycles together or re-canonicalize; both break
+invariants.

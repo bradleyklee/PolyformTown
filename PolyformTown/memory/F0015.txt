@@ -1,0 +1,2 @@
+Ensure all geometry computations remain exact and avoid floating point
+usage.

@@ -1,0 +1,2 @@
+Integrate domino tile into attachment system for edge alignment and
+merging.

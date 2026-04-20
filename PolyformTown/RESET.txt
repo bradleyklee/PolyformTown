@@ -6,14 +6,4 @@ Read FUTURES.txt to understand direction.
 Read README.txt for user-facing behavior.
 Read and understand the source code.
 
-Treat the source code as ground truth.
-Do not fabricate structure, behavior, or results.
-
-Re-establish:
-- current version and target
-- test expectations against data
-- delivery method (patch or zip)
-
-Begin with minimal, testable changes.
-
-Apply changes only to source code present in the provided codebase.
+Ask the human for next steps. 

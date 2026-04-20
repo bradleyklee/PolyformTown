@@ -1,0 +1,2 @@
+All cycles transform together as a single rigid object. Independent
+transformation of cycles is invalid.

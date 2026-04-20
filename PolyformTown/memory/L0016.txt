@@ -1,0 +1,2 @@
+After merge, walk remaining edges to reconstruct cycles. Duplicate
+vertices indicate invalid traversal and must be corrected.

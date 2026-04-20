@@ -1,0 +1,2 @@
+All edits operate on a single file and must be delivered as a complete
+file. Partial or inferred edits are not acceptable.

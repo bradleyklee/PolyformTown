@@ -1,0 +1,2 @@
+Define the boundary representation for the Hat tile using generalized
+geometry.

@@ -1,0 +1,2 @@
+Implement tile file loader to parse boundary definitions into internal
+structures.

@@ -1,0 +1,2 @@
+Always read repository files before acting and treat them as ground
+truth. Never reconstruct file contents from memory.

@@ -1,0 +1,2 @@
+All geometry is computed on the integer lattice with unit edges.
+Floating point arithmetic is never used.

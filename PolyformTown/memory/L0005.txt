@@ -1,0 +1,2 @@
+Any change affecting multiple files must be delivered as a valid patch
+or archive. Do not describe multi-file edits informally.

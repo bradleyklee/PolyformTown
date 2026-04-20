@@ -1,0 +1,1 @@
+Verify that generated counts match OEIS A000105 baseline values.

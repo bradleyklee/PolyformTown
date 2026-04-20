@@ -1,0 +1,1 @@
+Move tile definitions into external files for flexible loading.

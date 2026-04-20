@@ -1,0 +1,2 @@
+Canonicalization occurs once after attachment and cycle extraction:
+attach, extract cycles, build Poly, canonicalize, store.

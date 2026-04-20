@@ -1,0 +1,2 @@
+Define the domino tile boundary using unit-length edges and a closed
+cycle representation.

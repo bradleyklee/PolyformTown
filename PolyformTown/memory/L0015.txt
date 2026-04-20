@@ -1,0 +1,1 @@
+If a tile is chiral, include its reflected variant during attachment.

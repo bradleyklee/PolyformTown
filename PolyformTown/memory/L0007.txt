@@ -1,0 +1,2 @@
+Polyforms use edge-cycle geometry rather than cell occupancy. All
+structure is encoded by boundary cycles.

@@ -1,0 +1,3 @@
+Floating point use, cell-based modeling, independent cycle transforms,
+global cycle sorting, unresolved duplicates, and repeated
+canonicalization indicate errors.

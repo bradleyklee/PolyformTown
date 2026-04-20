@@ -1,0 +1,1 @@
+Enumerate all valid edge matches for domino tiles during attachment.

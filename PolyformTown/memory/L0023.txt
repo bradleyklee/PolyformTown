@@ -1,0 +1,2 @@
+poly_print emits a leading hole flag followed by cycles, with the outer
+cycle first.

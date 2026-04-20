@@ -1,0 +1,2 @@
+The outer cycle is the one with maximum absolute signed area; this
+choice is invariant under symmetry.

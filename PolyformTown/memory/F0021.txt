@@ -1,0 +1,2 @@
+Generalize the engine to support vertex figures with non-uniform
+valencies as in tetrille tilings and related lattices.

@@ -1,0 +1,2 @@
+Never invent file contents, results, or behavior. If required data is
+not present, ask for it.

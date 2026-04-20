@@ -1,0 +1,2 @@
+A Poly consists of one outer boundary cycle and zero or more hole
+cycles. These cycles fully determine the shape.

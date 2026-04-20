@@ -1,0 +1,2 @@
+Align antiparallel edges, cancel antiparallel overlaps, and reject
+parallel overlaps to form the merged edge set.

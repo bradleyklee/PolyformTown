@@ -1,0 +1,2 @@
+Outer is CCW and holes are CW; orientations are enforced during
+canonicalization.

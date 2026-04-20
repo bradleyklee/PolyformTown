@@ -1,0 +1,3 @@
+Validate generalized lattice geometry against OEIS A00228 (polyiamonds)
+and A005577 (polyhexes) to confirm correctness of polyforms on
+triangular grid.
