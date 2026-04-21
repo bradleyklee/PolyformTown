@@ -7,6 +7,7 @@
 #define MAX_CYCLES 32
 
 typedef struct {
+    int v;
     int x;
     int y;
 } Coord;

@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 
     for (int level = 1; level <= max_n; level++) {
         if (level == max_n) {
-            for (size_t i = 0; i < cur.count; i++) poly_print_edges(&cur.data[i]);
+            for (size_t i = 0; i < cur.count; i++) tile_print_imgtable_shape(&tile, &cur.data[i]);
             break;
         }
 

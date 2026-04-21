@@ -1,9 +1,18 @@
 name: hexagon
 lattice: triangular
+
+constants:
+r = sqrt(3)
+
+basis:
+6:
+  1 0
+  1/2 r/2
+
 cycle:
-0 1
-1 0
-2 0
-2 1
-1 2
-0 2
+6 0 1
+6 1 0
+6 2 0
+6 2 1
+6 1 2
+6 0 2

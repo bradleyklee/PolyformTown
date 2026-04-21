@@ -9,6 +9,7 @@ static unsigned poly_hash(const Poly *p) {
         const Cycle *c = &p->cycles[k];
         h ^= (unsigned)c->n; h *= 16777619u;
         for (int i = 0; i < c->n; i++) {
+            h ^= (unsigned)(c->v[i].v + 10000); h *= 16777619u;
             h ^= (unsigned)(c->v[i].x + 10000); h *= 16777619u;
             h ^= (unsigned)(c->v[i].y + 10000); h *= 16777619u;
         }
@@ -23,7 +24,7 @@ static int poly_equal(const Poly *a, const Poly *b) {
         const Cycle *cb = &b->cycles[k];
         if (ca->n != cb->n) return 0;
         for (int i = 0; i < ca->n; i++) {
-            if (ca->v[i].x != cb->v[i].x || ca->v[i].y != cb->v[i].y) return 0;
+            if (ca->v[i].v != cb->v[i].v || ca->v[i].x != cb->v[i].x || ca->v[i].y != cb->v[i].y) return 0;
         }
     }
     return 1;

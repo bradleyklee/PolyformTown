@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int coord_eq(Coord a, Coord b) {
-    return a.x == b.x && a.y == b.y;
+    return a.v == b.v && a.x == b.x && a.y == b.y;
 }
 
 Edge cycle_edge(const Cycle *c, int i) {
@@ -48,6 +48,7 @@ void cycle_normalize_position(Cycle *c) {
 }
 
 static int coord_less(Coord a, Coord b) {
+    if (a.v != b.v) return a.v < b.v;
     if (a.x != b.x) return a.x < b.x;
     return a.y < b.y;
 }
@@ -77,24 +78,24 @@ static int lattice_transform_count(int lattice) {
 static Coord square_apply(Coord p, int t) {
     int x = p.x, y = p.y;
     switch (t) {
-        case 0: return (Coord){ x,  y};
-        case 1: return (Coord){ y, -x};
-        case 2: return (Coord){-x, -y};
-        case 3: return (Coord){-y,  x};
-        case 4: return (Coord){-x,  y};
-        case 5: return (Coord){ y,  x};
-        case 6: return (Coord){ x, -y};
-        case 7: return (Coord){-y, -x};
+        case 0: return (Coord){p.v,  x,  y};
+        case 1: return (Coord){p.v,  y, -x};
+        case 2: return (Coord){p.v, -x, -y};
+        case 3: return (Coord){p.v, -y,  x};
+        case 4: return (Coord){p.v, -x,  y};
+        case 5: return (Coord){p.v,  y,  x};
+        case 6: return (Coord){p.v,  x, -y};
+        case 7: return (Coord){p.v, -y, -x};
         default: return p;
     }
 }
 
 static Coord tri_rot60(Coord p) {
-    return (Coord){-p.y, p.x + p.y};
+    return (Coord){p.v, -p.y, p.x + p.y};
 }
 
 static Coord tri_reflect(Coord p) {
-    return (Coord){p.y, p.x};
+    return (Coord){p.v, p.y, p.x};
 }
 
 static Coord triangular_apply(Coord p, int t) {
@@ -124,6 +125,7 @@ void cycle_transform_lattice(const Cycle *src, Cycle *dst, int lattice, int t) {
 int cycle_less(const Cycle *a, const Cycle *b) {
     if (a->n != b->n) return a->n < b->n;
     for (int i = 0; i < a->n; i++) {
+        if (a->v[i].v != b->v[i].v) return a->v[i].v < b->v[i].v;
         if (a->v[i].x != b->v[i].x) return a->v[i].x < b->v[i].x;
         if (a->v[i].y != b->v[i].y) return a->v[i].y < b->v[i].y;
     }
@@ -232,6 +234,7 @@ int poly_less(const Poly *a, const Poly *b) {
     for (int i = 0; i < a->cycle_count; i++) {
         if (a->cycles[i].n != b->cycles[i].n) return a->cycles[i].n < b->cycles[i].n;
         for (int j = 0; j < a->cycles[i].n; j++) {
+            if (a->cycles[i].v[j].v != b->cycles[i].v[j].v) return a->cycles[i].v[j].v < b->cycles[i].v[j].v;
             if (a->cycles[i].v[j].x != b->cycles[i].v[j].x) return a->cycles[i].v[j].x < b->cycles[i].v[j].x;
             if (a->cycles[i].v[j].y != b->cycles[i].v[j].y) return a->cycles[i].v[j].y < b->cycles[i].v[j].y;
         }
