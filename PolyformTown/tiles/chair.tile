@@ -1,4 +1,5 @@
 name: chair tromino
+lattice: square
 cycle:
 0 0
 1 0

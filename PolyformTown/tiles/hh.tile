@@ -1,0 +1,8 @@
+name: half hexagon
+lattice: triangular
+cycle:
+0 1
+1 1
+2 1
+1 2
+0 2

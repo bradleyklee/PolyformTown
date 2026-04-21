@@ -1,3 +1,11 @@
-Validate generalized lattice geometry against OEIS A00228 (polyiamonds)
-and A005577 (polyhexes) to confirm correctness of polyforms on
-triangular grid.
+Validated generalized geometry against OEIS targets after the non-square
+lattice upgrade.
+
+Verified reference sequences:
+- A000577 for triangle / polyiamonds: 1, 1, 1, 3, 4, 12, 24, 66.
+- A000228 for hexagon / polyhexes: 1, 1, 3, 7, 22, 82.
+- A057782 for half hexagon / polytriamonds: 1, 9, 94, 1552, 27285, 509805.
+
+This confirms that lattice-aware symmetry, translation-only attachment of
+precomputed variants, and exact integer geometry are working together as
+intended.

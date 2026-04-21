@@ -1,0 +1,3 @@
+Triangular lattice geometry can stay exact in a 2-component integer basis.
+The same signed-area cross-product machinery still works because the basis
+change contributes only a constant scale factor.

@@ -1,1 +1,4 @@
-Add support for non-square lattice coordinate systems in geometry model.
+Implemented explicit square and triangular lattice support in tile files and
+throughout canonicalization. Tiles now carry a lattice tag, symmetry is chosen
+per lattice (D4 for square, D6 for triangular), and the same edge-cycle engine
+operates on both lattices without changing the core hash model.

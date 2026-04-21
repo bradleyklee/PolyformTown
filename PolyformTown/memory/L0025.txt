@@ -1,0 +1,3 @@
+Precompute lattice-specific symmetry variants once and let attachment do only
+translation and edge cancellation. This keeps symmetry complete while keeping
+the attachment stage simple.
