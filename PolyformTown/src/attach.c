@@ -111,6 +111,43 @@ int build_frontier_edges(const Poly *p, Edge *edges) {
     return n;
 }
 
+int build_frontier_vertices(const Poly *p, Coord *verts) {
+    Edge edges[MAX_VERTS * MAX_CYCLES];
+    int ec = build_frontier_edges(p, edges);
+    int vc = 0;
+
+    for (int i = 0; i < ec; i++) {
+        int seen_a = 0;
+        int seen_b = 0;
+        for (int j = 0; j < vc; j++) {
+            if (coord_eq(verts[j], edges[i].a)) seen_a = 1;
+            if (coord_eq(verts[j], edges[i].b)) seen_b = 1;
+        }
+        if (!seen_a) verts[vc++] = edges[i].a;
+        if (!seen_b) verts[vc++] = edges[i].b;
+    }
+
+    return vc;
+}
+
+int poly_has_boundary_vertex(const Poly *p, Coord v) {
+    Edge edges[MAX_VERTS * MAX_CYCLES];
+    int ec = build_frontier_edges(p, edges);
+    for (int i = 0; i < ec; i++) {
+        if (coord_eq(edges[i].a, v) || coord_eq(edges[i].b, v)) return 1;
+    }
+    return 0;
+}
+
+int align_tile_to_frontier_edge(const Poly *base, const Cycle *tile_variant,
+                                int base_edge_index, int tile_edge_index,
+                                Cycle *aligned) {
+    Edge frontier[MAX_VERTS * MAX_CYCLES];
+    int frontier_n = build_frontier_edges(base, frontier);
+    if (base_edge_index < 0 || base_edge_index >= frontier_n) return 0;
+    return align_tile(tile_variant, tile_edge_index, frontier[base_edge_index], aligned);
+}
+
 static int build_union_edges(const Poly *a, const Cycle *b, LEdge *out, int *out_n) {
     int n = 0;
 

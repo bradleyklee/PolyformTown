@@ -83,9 +83,9 @@ Square lattice examples:
     ./poly_count 3 tiles/tetL.tile
 
 Triangular lattice examples:
-    ./poly_count 8 tiles/triangle.tile
-    ./poly_count 6 tiles/hexagon.tile
-    ./poly_count 6 tiles/hh.tile
+    ./poly_count 8 'tiles/triangle.tile'
+    ./poly_count 6 'tiles/hexagon.tile'
+    ./poly_count 6 'tiles/half hexagon.tile'
 
 Count hole-bearing outputs:
     ./poly_print 7 tiles/monomino.tile | grep '^1 ' | wc -l
