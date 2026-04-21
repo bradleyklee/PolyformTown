@@ -1,4 +1,5 @@
 #include "cycle.h"
+#include "tile.h"
 #include <stdio.h>
 
 int coord_eq(Coord a, Coord b) {
@@ -69,21 +70,54 @@ void cycle_canonicalize_shift(Cycle *c) {
     }
 }
 
+static int lattice_transform_count(int lattice) {
+    return (lattice == TILE_LATTICE_TRIANGULAR) ? 12 : 8;
+}
+
+static Coord square_apply(Coord p, int t) {
+    int x = p.x, y = p.y;
+    switch (t) {
+        case 0: return (Coord){ x,  y};
+        case 1: return (Coord){ y, -x};
+        case 2: return (Coord){-x, -y};
+        case 3: return (Coord){-y,  x};
+        case 4: return (Coord){-x,  y};
+        case 5: return (Coord){ y,  x};
+        case 6: return (Coord){ x, -y};
+        case 7: return (Coord){-y, -x};
+        default: return p;
+    }
+}
+
+static Coord tri_rot60(Coord p) {
+    return (Coord){-p.y, p.x + p.y};
+}
+
+static Coord tri_reflect(Coord p) {
+    return (Coord){p.y, p.x};
+}
+
+static Coord triangular_apply(Coord p, int t) {
+    Coord q = p;
+    if (t >= 6) {
+        q = tri_reflect(q);
+        t -= 6;
+    }
+    for (int i = 0; i < t; i++) q = tri_rot60(q);
+    return q;
+}
+
 void cycle_transform(const Cycle *src, Cycle *dst, int t) {
+    cycle_transform_lattice(src, dst, TILE_LATTICE_SQUARE, t);
+}
+
+void cycle_transform_lattice(const Cycle *src, Cycle *dst, int lattice, int t) {
     dst->n = src->n;
     for (int i = 0; i < src->n; i++) {
-        int x = src->v[i].x, y = src->v[i].y;
-        switch (t) {
-            case 0: dst->v[i] = (Coord){ x,  y}; break;
-            case 1: dst->v[i] = (Coord){ y, -x}; break;
-            case 2: dst->v[i] = (Coord){-x, -y}; break;
-            case 3: dst->v[i] = (Coord){-y,  x}; break;
-            case 4: dst->v[i] = (Coord){-x,  y}; break;
-            case 5: dst->v[i] = (Coord){ y,  x}; break;
-            case 6: dst->v[i] = (Coord){ x, -y}; break;
-            case 7: dst->v[i] = (Coord){-y, -x}; break;
-            default: dst->v[i] = src->v[i]; break;
-        }
+        Coord p = src->v[i];
+        dst->v[i] = (lattice == TILE_LATTICE_TRIANGULAR)
+            ? triangular_apply(p, t)
+            : square_apply(p, t);
     }
 }
 
@@ -97,10 +131,15 @@ int cycle_less(const Cycle *a, const Cycle *b) {
 }
 
 void cycle_canonicalize(const Cycle *src, Cycle *out) {
+    cycle_canonicalize_lattice(src, out, TILE_LATTICE_SQUARE);
+}
+
+void cycle_canonicalize_lattice(const Cycle *src, Cycle *out, int lattice) {
     Cycle best = {0}, cur;
     int first = 1;
-    for (int t = 0; t < 8; t++) {
-        cycle_transform(src, &cur, t);
+    int count = lattice_transform_count(lattice);
+    for (int t = 0; t < count; t++) {
+        cycle_transform_lattice(src, &cur, lattice, t);
         if (cycle_signed_area2(&cur) < 0) cycle_reverse(&cur);
         cycle_normalize_position(&cur);
         cycle_canonicalize_shift(&cur);
@@ -138,8 +177,12 @@ void poly_normalize_position(Poly *p) {
 }
 
 void poly_transform(const Poly *src, Poly *dst, int t) {
+    poly_transform_lattice(src, dst, TILE_LATTICE_SQUARE, t);
+}
+
+void poly_transform_lattice(const Poly *src, Poly *dst, int lattice, int t) {
     dst->cycle_count = src->cycle_count;
-    for (int i = 0; i < src->cycle_count; i++) cycle_transform(&src->cycles[i], &dst->cycles[i], t);
+    for (int i = 0; i < src->cycle_count; i++) cycle_transform_lattice(&src->cycles[i], &dst->cycles[i], lattice, t);
 }
 
 static int cycle_abs_area_cmp_desc(const Cycle *a, const Cycle *b) {
@@ -197,10 +240,15 @@ int poly_less(const Poly *a, const Poly *b) {
 }
 
 void poly_canonicalize(const Poly *src, Poly *out) {
+    poly_canonicalize_lattice(src, out, TILE_LATTICE_SQUARE);
+}
+
+void poly_canonicalize_lattice(const Poly *src, Poly *out, int lattice) {
     Poly best = {0}, cur;
     int first = 1;
-    for (int t = 0; t < 8; t++) {
-        poly_transform(src, &cur, t);
+    int count = lattice_transform_count(lattice);
+    for (int t = 0; t < count; t++) {
+        poly_transform_lattice(src, &cur, lattice, t);
         poly_normalize_position(&cur);
         poly_prepare_cycles(&cur);
         if (first || poly_less(&cur, &best)) {
@@ -218,8 +266,7 @@ int poly_has_holes(const Poly *p) {
 void poly_print_edges(const Poly *p) {
     printf("%d ", poly_has_holes(p) ? 1 : 0);
     for (int i = 0; i < p->cycle_count; i++) {
-        if (i) printf(" | ");
         cycle_print_edges(&p->cycles[i]);
+        printf(i + 1 == p->cycle_count ? "\n" : " ");
     }
-    printf("\n");
 }

@@ -34,15 +34,19 @@ void cycle_translate(Cycle *c, int dx, int dy);
 void cycle_normalize_position(Cycle *c);
 void cycle_canonicalize_shift(Cycle *c);
 void cycle_transform(const Cycle *src, Cycle *dst, int t);
+void cycle_transform_lattice(const Cycle *src, Cycle *dst, int lattice, int t);
 int cycle_less(const Cycle *a, const Cycle *b);
 void cycle_canonicalize(const Cycle *src, Cycle *out);
+void cycle_canonicalize_lattice(const Cycle *src, Cycle *out, int lattice);
 void cycle_print_edges(const Cycle *c);
 
 void poly_translate(Poly *p, int dx, int dy);
 void poly_normalize_position(Poly *p);
 void poly_transform(const Poly *src, Poly *dst, int t);
+void poly_transform_lattice(const Poly *src, Poly *dst, int lattice, int t);
 int poly_less(const Poly *a, const Poly *b);
 void poly_canonicalize(const Poly *src, Poly *out);
+void poly_canonicalize_lattice(const Poly *src, Poly *out, int lattice);
 int poly_has_holes(const Poly *p);
 void poly_print_edges(const Poly *p);
 

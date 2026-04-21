@@ -1,8 +1,7 @@
 This file is a priority-ordered index into memory/. Each
 line references a single lesson file; earlier lines have
 higher priority and should be loaded first into context.
-Lesson files are atomic and stable, while priority is
-controlled solely by reordering this index.
+Detailed lesson text lives in memory/Lxxxx.txt.
 
 L0001 Work from data
 L0002 No fabrication
@@ -19,6 +18,8 @@ L0012 Orientation
 L0013 Canonical form
 L0014 Attachment rules
 L0015 Chiral tiles
+L0025 Lattice-specific symmetry as precomputed variants
+L0026 Triangular lattice exactness in 2-component coordinates
 L0022 Frontier rule
 L0016 Cycle extraction and validation
 L0017 Interior validation

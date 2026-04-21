@@ -1,15 +1,13 @@
 This file is an ordered index into memory/. Each line
 references a single future item file (Fxxxx.txt). Within
 the ACTIVE section, earlier lines should be pursued first.
-Future files are atomic and stable. Reordering does not
-change file index number or title. A leading check mark
-(✓) indicates a completed item, which is moved to the
-COMPLETE section. Completed items are not deleted from
-memory.
+Future files are atomic and stable, and detailed notes live
+in memory/Fxxxx.txt. Reordering does not change file index
+number or title. A leading check mark (✓) indicates a
+completed item, which is moved to the COMPLETE section.
+Completed items are not deleted from memory.
 
 ACTIVE
-F0014 Add support for non-square lattice coordinate systems
-F0020 Test generalized geometry against OEIS A00228 and A005577
 F0015 Ensure all geometry remains exact (no floats)
 F0021 Generalize to vertex figures with non-uniform valencies (tetrille tilings)
 F0016 Define Hat tile boundary representation
@@ -18,6 +16,8 @@ F0018 Define Spectre tile boundary representation
 F0019 Run engine on Spectre tiling
 
 COMPLETE
+✓ F0014 Add support for non-square lattice coordinate systems
+✓ F0020 Test generalized geometry against OEIS A000228 and A000577
 ✓ F0001 Verify A000105 counts match baseline
 ✓ F0002 Verify hole counts at n=7 and n=8
 ✓ F0003 Define domino tile boundary with unit edges
@@ -31,4 +31,3 @@ COMPLETE
 ✓ F0011 Implement tile file loader
 ✓ F0012 Generate symmetry variants for loaded tiles
 ✓ F0013 Normalize tiles after reflection
-
