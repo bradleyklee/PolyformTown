@@ -30,6 +30,8 @@ check_eq "$(./poly_count 4 tiles/chair.tile | tail -n 1)" "n=4 count=7142" "chai
 check_eq "$(./poly_count 4 tiles/triangle.tile | tail -n 1)" "n=4 count=3" "triangle count"
 check_eq "$(./poly_count 4 tests/legacy_monomino.tile | tail -n 1)" "n=4 count=5" "legacy monomino count" 
 
+check_eq "$(./poly_count 8 tiles/kite.tile | tail -n 1)" "n=8 count=873" "kite count n=8"
+
 line="$(./tile_to_imgtable tiles/triangle.tile)"
 check_contains "$line" "[ 0 | (r=sqrt(3)) | (6:1,0;1/2,r/2) | (6 0 0,6 1 0,6 0 1) ]" "triangle conversion"
 

@@ -2,6 +2,43 @@
 #include "tile.h"
 #include <stdio.h>
 
+static void tetrille_embed6_scaled(Coord p, long long *sx, long long *sy) {
+    if (p.v == 6) {
+        *sx = 6LL * p.x;
+        *sy = 6LL * p.y;
+    } else if (p.v == 4) {
+        *sx = 3LL * p.x;
+        *sy = 3LL * p.y;
+    } else {
+        *sx = 2LL * (p.x - p.y);
+        *sy = 2LL * (p.x + 2LL * p.y);
+    }
+}
+
+static int floor_div6(long long a) {
+    if (a >= 0) return (int)(a / 6LL);
+    return (int)(-(((-a) + 5LL) / 6LL));
+}
+
+static void cycle_translate_tetrille(Cycle *c, int m6, int n6) {
+    for (int i = 0; i < c->n; i++) {
+        Coord *p = &c->v[i];
+        if (p->v == 6) {
+            p->x += m6;
+            p->y += n6;
+        } else if (p->v == 4) {
+            p->x += 2 * m6;
+            p->y += 2 * n6;
+        } else if (p->v == 3) {
+            p->x += 2 * m6 + n6;
+            p->y += -m6 + n6;
+        } else {
+            p->x += m6;
+            p->y += n6;
+        }
+    }
+}
+
 int coord_eq(Coord a, Coord b) {
     return a.v == b.v && a.x == b.x && a.y == b.y;
 }
@@ -13,12 +50,21 @@ Edge cycle_edge(const Cycle *c, int i) {
     return e;
 }
 
-long long cycle_signed_area2(const Cycle *c) {
+long long cycle_signed_area2(const Cycle *c, int lattice) {
+    int tetrille = (lattice == TILE_LATTICE_TETRILLE);
+
     long long s = 0;
     for (int i = 0; i < c->n; i++) {
         Coord a = c->v[i];
         Coord b = c->v[(i + 1) % c->n];
-        s += (long long)a.x * b.y - (long long)b.x * a.y;
+        if (tetrille) {
+            long long ax, ay, bx, by;
+            tetrille_embed6_scaled(a, &ax, &ay);
+            tetrille_embed6_scaled(b, &bx, &by);
+            s += ax * by - bx * ay;
+        } else {
+            s += (long long)a.x * b.y - (long long)b.x * a.y;
+        }
     }
     return s;
 }
@@ -38,13 +84,29 @@ void cycle_translate(Cycle *c, int dx, int dy) {
     }
 }
 
-void cycle_normalize_position(Cycle *c) {
-    int minx = c->v[0].x, miny = c->v[0].y;
-    for (int i = 1; i < c->n; i++) {
-        if (c->v[i].x < minx) minx = c->v[i].x;
-        if (c->v[i].y < miny) miny = c->v[i].y;
+void cycle_normalize_position(Cycle *c, int lattice) {
+    int tetrille = (lattice == TILE_LATTICE_TETRILLE);
+
+    if (!tetrille) {
+        int minx = c->v[0].x, miny = c->v[0].y;
+        for (int i = 1; i < c->n; i++) {
+            if (c->v[i].x < minx) minx = c->v[i].x;
+            if (c->v[i].y < miny) miny = c->v[i].y;
+        }
+        cycle_translate(c, -minx, -miny);
+        return;
     }
-    cycle_translate(c, -minx, -miny);
+
+    long long minx, miny;
+    tetrille_embed6_scaled(c->v[0], &minx, &miny);
+    for (int i = 1; i < c->n; i++) {
+        long long x, y;
+        tetrille_embed6_scaled(c->v[i], &x, &y);
+        if (x < minx) minx = x;
+        if (y < miny) miny = y;
+    }
+
+    cycle_translate_tetrille(c, -floor_div6(minx), -floor_div6(miny));
 }
 
 static int coord_less(Coord a, Coord b) {
@@ -71,8 +133,12 @@ void cycle_canonicalize_shift(Cycle *c) {
     }
 }
 
+static int cycle_abs_area_cmp_desc(const Cycle *a, const Cycle *b, int lattice);
+
 static int lattice_transform_count(int lattice) {
-    return (lattice == TILE_LATTICE_TRIANGULAR) ? 12 : 8;
+    if (lattice == TILE_LATTICE_TRIANGULAR) return 12;
+    if (lattice == TILE_LATTICE_TETRILLE) return 12;
+    return 8;
 }
 
 static Coord square_apply(Coord p, int t) {
@@ -108,6 +174,21 @@ static Coord triangular_apply(Coord p, int t) {
     return q;
 }
 
+static Coord tetrille_reflect(Coord p) {
+    if (p.v == 3) return (Coord){p.v, p.x + p.y, -p.y};
+    return (Coord){p.v, p.y, p.x};
+}
+
+static Coord tetrille_apply(Coord p, int t) {
+    Coord q = p;
+    if (t >= 6) {
+        q = tetrille_reflect(q);
+        t -= 6;
+    }
+    for (int i = 0; i < t; i++) q = tri_rot60(q);
+    return q;
+}
+
 void cycle_transform(const Cycle *src, Cycle *dst, int t) {
     cycle_transform_lattice(src, dst, TILE_LATTICE_SQUARE, t);
 }
@@ -116,9 +197,9 @@ void cycle_transform_lattice(const Cycle *src, Cycle *dst, int lattice, int t) {
     dst->n = src->n;
     for (int i = 0; i < src->n; i++) {
         Coord p = src->v[i];
-        dst->v[i] = (lattice == TILE_LATTICE_TRIANGULAR)
-            ? triangular_apply(p, t)
-            : square_apply(p, t);
+        if (lattice == TILE_LATTICE_TRIANGULAR) dst->v[i] = triangular_apply(p, t);
+        else if (lattice == TILE_LATTICE_TETRILLE) dst->v[i] = tetrille_apply(p, t);
+        else dst->v[i] = square_apply(p, t);
     }
 }
 
@@ -136,46 +217,131 @@ void cycle_canonicalize(const Cycle *src, Cycle *out) {
     cycle_canonicalize_lattice(src, out, TILE_LATTICE_SQUARE);
 }
 
-void cycle_canonicalize_lattice(const Cycle *src, Cycle *out, int lattice) {
-    Cycle best = {0}, cur;
-    int first = 1;
-    int count = lattice_transform_count(lattice);
-    for (int t = 0; t < count; t++) {
-        cycle_transform_lattice(src, &cur, lattice, t);
-        if (cycle_signed_area2(&cur) < 0) cycle_reverse(&cur);
-        cycle_normalize_position(&cur);
-        cycle_canonicalize_shift(&cur);
-        if (first || cycle_less(&cur, &best)) {
-            best = cur;
-            first = 0;
+static void cycle_rotate_to_start(const Cycle *src, Cycle *dst, int start) {
+    dst->n = src->n;
+    for (int i = 0; i < src->n; i++) dst->v[i] = src->v[(start + i) % src->n];
+}
+
+static int cycle_find_outer_index(const Poly *p, int lattice) {
+    int outer = 0;
+    for (int i = 1; i < p->cycle_count; i++) {
+        if (cycle_abs_area_cmp_desc(&p->cycles[i], &p->cycles[outer], lattice)) outer = i;
+    }
+    return outer;
+}
+
+static void poly_translate_tetrille(Poly *p, int m6, int n6) {
+    for (int i = 0; i < p->cycle_count; i++) cycle_translate_tetrille(&p->cycles[i], m6, n6);
+}
+
+static void poly_prepare_cycles_rooted(Poly *p, int outer_index) {
+    if (outer_index != 0) {
+        Cycle tmp = p->cycles[0];
+        p->cycles[0] = p->cycles[outer_index];
+        p->cycles[outer_index] = tmp;
+    }
+
+    for (int i = 0; i < p->cycle_count; i++) {
+        long long area = cycle_signed_area2(&p->cycles[i], TILE_LATTICE_TETRILLE);
+        if (i == 0) {
+            if (area < 0) cycle_reverse(&p->cycles[i]);
+        } else {
+            if (area > 0) cycle_reverse(&p->cycles[i]);
+            cycle_canonicalize_shift(&p->cycles[i]);
         }
+    }
+
+    for (int i = 1; i < p->cycle_count; i++) {
+        for (int j = i + 1; j < p->cycle_count; j++) {
+            if (cycle_less(&p->cycles[j], &p->cycles[i])) {
+                Cycle tmp = p->cycles[i];
+                p->cycles[i] = p->cycles[j];
+                p->cycles[j] = tmp;
+            }
+        }
+    }
+}
+
+void cycle_canonicalize_lattice(const Cycle *src, Cycle *out, int lattice) {
+    if (lattice != TILE_LATTICE_TETRILLE) {
+        Cycle best = {0}, cur;
+        int first = 1;
+        int count = lattice_transform_count(lattice);
+        for (int t = 0; t < count; t++) {
+            cycle_transform_lattice(src, &cur, lattice, t);
+            if (cycle_signed_area2(&cur, lattice) < 0) cycle_reverse(&cur);
+            cycle_normalize_position(&cur, lattice);
+            cycle_canonicalize_shift(&cur);
+            if (first || cycle_less(&cur, &best)) {
+                best = cur;
+                first = 0;
+            }
+        }
+        *out = best;
+        return;
+    }
+
+    Cycle best = {0}, rooted, cur;
+    int first = 1;
+    for (int root = 0; root < src->n; root++) {
+        if (src->v[root].v != 6) continue;
+        cycle_rotate_to_start(src, &rooted, root);
+        cycle_translate_tetrille(&rooted, -rooted.v[0].x, -rooted.v[0].y);
+        for (int t = 0; t < 12; t++) {
+            cycle_transform_lattice(&rooted, &cur, lattice, t);
+            if (first || cycle_less(&cur, &best)) {
+                best = cur;
+                first = 0;
+            }
+        }
+    }
+
+    if (first) {
+        best = *src;
+        cycle_normalize_position(&best, lattice);
+        cycle_canonicalize_shift(&best);
     }
     *out = best;
 }
 
-void cycle_print_edges(const Cycle *c) {
-    for (int i = 0; i < c->n; i++) {
-        Edge e = cycle_edge(c, i);
-        printf("(%d,%d)->(%d,%d)%s", e.a.x, e.a.y, e.b.x, e.b.y,
-               (i + 1 == c->n) ? "" : " ");
-    }
-}
 
 void poly_translate(Poly *p, int dx, int dy) {
     for (int i = 0; i < p->cycle_count; i++) cycle_translate(&p->cycles[i], dx, dy);
 }
 
-void poly_normalize_position(Poly *p) {
-    int minx = p->cycles[0].v[0].x;
-    int miny = p->cycles[0].v[0].y;
+void poly_normalize_position(Poly *p, int lattice) {
+    int tetrille = (lattice == TILE_LATTICE_TETRILLE);
+
+    if (!tetrille) {
+        int minx = p->cycles[0].v[0].x;
+        int miny = p->cycles[0].v[0].y;
+        for (int i = 0; i < p->cycle_count; i++) {
+            Cycle *c = &p->cycles[i];
+            for (int j = 0; j < c->n; j++) {
+                if (c->v[j].x < minx) minx = c->v[j].x;
+                if (c->v[j].y < miny) miny = c->v[j].y;
+            }
+        }
+        poly_translate(p, -minx, -miny);
+        return;
+    }
+
+    long long minx = 0, miny = 0;
+    int first = 1;
     for (int i = 0; i < p->cycle_count; i++) {
         Cycle *c = &p->cycles[i];
         for (int j = 0; j < c->n; j++) {
-            if (c->v[j].x < minx) minx = c->v[j].x;
-            if (c->v[j].y < miny) miny = c->v[j].y;
+            long long x, y;
+            tetrille_embed6_scaled(c->v[j], &x, &y);
+            if (first || x < minx) minx = x;
+            if (first || y < miny) miny = y;
+            first = 0;
         }
     }
-    poly_translate(p, -minx, -miny);
+
+    int tx = -floor_div6(minx);
+    int ty = -floor_div6(miny);
+    for (int i = 0; i < p->cycle_count; i++) cycle_translate_tetrille(&p->cycles[i], tx, ty);
 }
 
 void poly_transform(const Poly *src, Poly *dst, int t) {
@@ -187,19 +353,19 @@ void poly_transform_lattice(const Poly *src, Poly *dst, int lattice, int t) {
     for (int i = 0; i < src->cycle_count; i++) cycle_transform_lattice(&src->cycles[i], &dst->cycles[i], lattice, t);
 }
 
-static int cycle_abs_area_cmp_desc(const Cycle *a, const Cycle *b) {
-    long long aa = cycle_signed_area2(a);
-    long long ab = cycle_signed_area2(b);
+static int cycle_abs_area_cmp_desc(const Cycle *a, const Cycle *b, int lattice) {
+    long long aa = cycle_signed_area2(a, lattice);
+    long long ab = cycle_signed_area2(b, lattice);
     if (aa < 0) aa = -aa;
     if (ab < 0) ab = -ab;
     if (aa != ab) return aa > ab;
     return cycle_less(a, b);
 }
 
-static void poly_prepare_cycles(Poly *p) {
+static void poly_prepare_cycles(Poly *p, int lattice) {
     int outer = 0;
     for (int i = 1; i < p->cycle_count; i++) {
-        if (cycle_abs_area_cmp_desc(&p->cycles[i], &p->cycles[outer])) outer = i;
+        if (cycle_abs_area_cmp_desc(&p->cycles[i], &p->cycles[outer], lattice)) outer = i;
     }
 
     if (outer != 0) {
@@ -209,7 +375,7 @@ static void poly_prepare_cycles(Poly *p) {
     }
 
     for (int i = 0; i < p->cycle_count; i++) {
-        long long area = cycle_signed_area2(&p->cycles[i]);
+        long long area = cycle_signed_area2(&p->cycles[i], lattice);
         if (i == 0) {
             if (area < 0) cycle_reverse(&p->cycles[i]);
         } else {
@@ -247,29 +413,52 @@ void poly_canonicalize(const Poly *src, Poly *out) {
 }
 
 void poly_canonicalize_lattice(const Poly *src, Poly *out, int lattice) {
-    Poly best = {0}, cur;
-    int first = 1;
-    int count = lattice_transform_count(lattice);
-    for (int t = 0; t < count; t++) {
-        poly_transform_lattice(src, &cur, lattice, t);
-        poly_normalize_position(&cur);
-        poly_prepare_cycles(&cur);
-        if (first || poly_less(&cur, &best)) {
-            best = cur;
-            first = 0;
+    if (lattice != TILE_LATTICE_TETRILLE) {
+        Poly best = {0}, cur;
+        int first = 1;
+        int count = lattice_transform_count(lattice);
+        for (int t = 0; t < count; t++) {
+            poly_transform_lattice(src, &cur, lattice, t);
+            poly_normalize_position(&cur, lattice);
+            poly_prepare_cycles(&cur, lattice);
+            if (first || poly_less(&cur, &best)) {
+                best = cur;
+                first = 0;
+            }
         }
+        *out = best;
+        return;
+    }
+
+    int outer = cycle_find_outer_index(src, lattice);
+    const Cycle *outer_cycle = &src->cycles[outer];
+    Poly best = {0}, rooted, cur;
+    int first = 1;
+
+    for (int root = 0; root < outer_cycle->n; root++) {
+        if (outer_cycle->v[root].v != 6) continue;
+
+        rooted = *src;
+        cycle_rotate_to_start(&src->cycles[outer], &rooted.cycles[outer], root);
+        poly_translate_tetrille(&rooted, -rooted.cycles[outer].v[0].x, -rooted.cycles[outer].v[0].y);
+
+        for (int t = 0; t < 12; t++) {
+            int cur_outer;
+            poly_transform_lattice(&rooted, &cur, lattice, t);
+            cur_outer = cycle_find_outer_index(&cur, lattice);
+            poly_prepare_cycles_rooted(&cur, cur_outer);
+            if (first || poly_less(&cur, &best)) {
+                best = cur;
+                first = 0;
+            }
+        }
+    }
+
+    if (first) {
+        best = *src;
+        poly_normalize_position(&best, lattice);
+        poly_prepare_cycles(&best, lattice);
     }
     *out = best;
 }
 
-int poly_has_holes(const Poly *p) {
-    return p->cycle_count > 1;
-}
-
-void poly_print_edges(const Poly *p) {
-    printf("%d ", poly_has_holes(p) ? 1 : 0);
-    for (int i = 0; i < p->cycle_count; i++) {
-        cycle_print_edges(&p->cycles[i]);
-        printf(i + 1 == p->cycle_count ? "\n" : " ");
-    }
-}

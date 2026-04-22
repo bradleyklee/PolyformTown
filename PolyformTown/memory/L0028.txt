@@ -1,0 +1,1 @@
+When a tetrille counterexample lacks visible 6-vertices in printed output, treat that as a data point to investigate upstream anchoring/printing, not as permission to weaken the canonical invariant.

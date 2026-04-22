@@ -1,0 +1,3 @@
+For tetrille, whole-poly translations must be computed in the 6-system and
+lifted to v=4 and v=3 with the integer conversion formulas; never subtract
+or add raw coordinates across different tags directly.

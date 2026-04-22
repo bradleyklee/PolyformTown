@@ -1,0 +1,60 @@
+Tetrille integer conversion formulas (authoritative)
+
+All coordinate systems embed into the v=6 system. The v=4 and v=3 systems
+are projections and must be converted through v=6 for all translation logic.
+
+Forward embeddings:
+
+6 → 4:
+  (x4, y4) = (2*x6, 2*y6)
+  ⇒ v=4 coordinates are always even
+
+6 → 3:
+  (x3, y3) = (2*x6 + y6, -x6 + y6)
+  ⇒ (x3 - y3) ≡ 0 (mod 3)
+
+Inverse conversions (for recovering 6-translation):
+
+v=6:
+  x6 = dx
+  y6 = dy
+
+v=4:
+  x6 = dx/2
+  y6 = dy/2
+
+v=3:
+  x6 = (dx - dy)/3
+  y6 = (dx + 2*dy)/3
+
+Translation by (m6, n6):
+
+v=6:
+  (x, y) → (x + m6, y + n6)
+
+v=4:
+  (x, y) → (x + 2*m6, y + 2*n6)
+
+v=3:
+  (x, y) → (x + 2*m6 + n6, y - m6 + n6)
+
+Edge directions (all systems):
+  (1,0), (0,1), (-1,1), (-1,0), (0,-1), (1,-1)
+
+Constraints:
+
+- Never mix coordinate systems directly
+- All translations must pass through v=6
+- v=6 is the only global anchor system
+
+Debug invariants:
+
+v=4 → coordinates even
+v=3 → (x - y) % 3 == 0
+
+Violation indicates coordinate corruption.
+
+Insight:
+
+This embedding enables exact integer geometry across mixed lattices
+while preserving D6 symmetry and exact area invariants.

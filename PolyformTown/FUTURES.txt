@@ -8,6 +8,8 @@ completed item, which is moved to the COMPLETE section.
 Completed items are not deleted from memory.
 
 ACTIVE
+F0022 Finalize tetrille canonicalization against the n=12 duplicate
+F0023 Trace loss of 6-anchors in offending tetrille print output
 F0015 Ensure all geometry remains exact (no floats)
 F0021 Generalize to vertex figures with non-uniform valencies (tetrille tilings)
 F0016 Define Hat tile boundary representation

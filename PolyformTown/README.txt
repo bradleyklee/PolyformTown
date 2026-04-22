@@ -1,4 +1,4 @@
-PolyformTown V3.0
+PolyformTown V4.0
 =================
 
 Goal
@@ -68,6 +68,17 @@ poly_count N [tilefile]
 
 poly_print N [tilefile]
     Print the canonical edge form for each shape at level N.
+
+QC / smoke test
+--------------
+Run the project smoke test with:
+
+    bash tests/smoke.sh
+
+This now includes a tetrille regression guard that the verified polykite
+counts through n=8 remain:
+
+    1, 2, 4, 10, 27, 85, 262, 873
 
 Examples
 --------
@@ -153,6 +164,9 @@ primitives, but the architecture is no longer limited to square geometry.
 
 Status
 ------
-V3.0 is a stable milestone with verified square and triangular lattice
-support. A natural next goal is to generalize to vertex figures with
-non-uniform valencies.
+V4.0 suspends in a stable, reproducible state with verified square and
+triangular workflows, tetrille tile tooling, and an expanded smoke test
+that guards the known small polykite counts through n=8. The remaining
+open tetrille work is the explicit outer-anchor canonicalization fix and
+follow-up investigation of counterexamples that print without visible
+6-vertices on the outer boundary.

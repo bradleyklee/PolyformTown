@@ -1,0 +1,1 @@
+Finalize tetrille canonicalization around the explicit 12*Z outer-anchor specification, verify the n=12 duplicate counterexample collapses, and keep verified kite counts through n=8 unchanged.

@@ -25,6 +25,8 @@ L0016 Cycle extraction and validation
 L0017 Interior validation
 L0018 Canonicalization pipeline
 L0019 Canonicalization rules
+L0027 Tetrille canonicalization is outer-anchor-driven under D6
+L0028 Missing 6-anchors in print data must be investigated upstream
 L0020 Hashing
 L0021 Prohibited operations
 L0023 Print format

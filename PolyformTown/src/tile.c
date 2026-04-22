@@ -6,6 +6,7 @@
 
 static int lattice_transform_count(int lattice) {
     if (lattice == TILE_LATTICE_TRIANGULAR) return 12;
+    if (lattice == TILE_LATTICE_TETRILLE) return 12;
     if (lattice == TILE_LATTICE_SQUARE) return 8;
     return 1;
 }
@@ -95,8 +96,8 @@ static void print_imgtable_cycle_raw(const Cycle *c) {
 }
 
 void tile_print_imgtable_shape(const Tile *tile, const Poly *poly) {
-    int hole_count = (poly->cycle_count > 0) ? (poly->cycle_count - 1) : 0;
-    printf("[ %d | ", hole_count);
+    int hole_flag = (poly->cycle_count > 1) ? 1 : 0;
+    printf("[ %d | ", hole_flag);
     print_imgtable_constants(tile);
     printf(" | ");
     print_imgtable_basis(tile);
@@ -246,7 +247,7 @@ int tile_load(const char *path, Tile *tile) {
     }
     fclose(fp);
     if (tile->base.n < 3) return 0;
-    if (cycle_signed_area2(&tile->base) < 0) cycle_reverse(&tile->base);
+    if (cycle_signed_area2(&tile->base, tile->lattice) < 0) cycle_reverse(&tile->base);
     tile_build_variants(tile);
     return 1;
 }
@@ -258,8 +259,8 @@ void tile_build_variants(Tile *tile) {
     for (int t = 0; t < count; t++) {
         Cycle cur;
         cycle_transform_lattice(&tile->base, &cur, tile->lattice, t);
-        if (cycle_signed_area2(&cur) < 0) cycle_reverse(&cur);
-        cycle_normalize_position(&cur);
+        if (cycle_signed_area2(&cur, tile->lattice) < 0) cycle_reverse(&cur);
+        cycle_normalize_position(&cur, tile->lattice);
         cycle_canonicalize_shift(&cur);
 
         int dup = 0;

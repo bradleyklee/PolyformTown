@@ -1,5 +1,6 @@
 #include "attach.h"
 #include <string.h>
+#include <math.h>
 
 #define MAX_EDGES (MAX_VERTS)
 #define MAX_LOCAL (4 * MAX_VERTS)
@@ -8,6 +9,12 @@ typedef struct {
     Edge e;
     int canceled;
 } LEdge;
+
+typedef struct {
+    int system;
+    int dx;
+    int dy;
+} TaggedVec;
 
 enum {
     WALK_FAIL = 0,
@@ -18,13 +25,132 @@ enum {
 static int edge_same(Edge a, Edge b) { return coord_eq(a.a,b.a) && coord_eq(a.b,b.b); }
 static int edge_opp(Edge a, Edge b) { return coord_eq(a.a,b.b) && coord_eq(a.b,b.a); }
 
+static int tetrille_point_to_sys3_scaled(Coord p, int *x, int *y) {
+    if (p.v == 3) {
+        *x = 2 * p.x;
+        *y = 2 * p.y;
+        return 1;
+    }
+    if (p.v == 4) {
+        *x = 2 * p.x + p.y;
+        *y = -p.x + p.y;
+        return 1;
+    }
+    if (p.v == 6) {
+        *x = 4 * p.x + 2 * p.y;
+        *y = -2 * p.x + 2 * p.y;
+        return 1;
+    }
+    return 0;
+}
+
+static int tetrille_point_to_sys4(Coord p, int *x, int *y) {
+    if (p.v == 4) {
+        *x = p.x;
+        *y = p.y;
+        return 1;
+    }
+    if (p.v == 6) {
+        *x = 2 * p.x;
+        *y = 2 * p.y;
+        return 1;
+    }
+    return 0;
+}
+
+static int tetrille_edge_tag(Edge e, TaggedVec *tv) {
+    int system = e.a.v < e.b.v ? e.a.v : e.b.v;
+    int ax, ay, bx, by;
+    if (system == 3) {
+        if (!tetrille_point_to_sys3_scaled(e.a, &ax, &ay)) return 0;
+        if (!tetrille_point_to_sys3_scaled(e.b, &bx, &by)) return 0;
+        tv->system = 3;
+        tv->dx = bx - ax;
+        tv->dy = by - ay;
+        return 1;
+    }
+    if (system == 4) {
+        if (!tetrille_point_to_sys4(e.a, &ax, &ay)) return 0;
+        if (!tetrille_point_to_sys4(e.b, &bx, &by)) return 0;
+        tv->system = 4;
+        tv->dx = bx - ax;
+        tv->dy = by - ay;
+        return 1;
+    }
+    if (system == 6) {
+        tv->system = 6;
+        tv->dx = e.b.x - e.a.x;
+        tv->dy = e.b.y - e.a.y;
+        return 1;
+    }
+    return 0;
+}
+
+static int tetrille_delta_to_6(int valence, int dx, int dy, int *m, int *n) {
+    if (valence == 6) {
+        *m = dx;
+        *n = dy;
+        return 1;
+    }
+    if (valence == 4) {
+        if ((dx & 1) || (dy & 1)) return 0;
+        *m = dx / 2;
+        *n = dy / 2;
+        return 1;
+    }
+    if (valence == 3) {
+        int a = dx - dy;
+        int b = dx + 2 * dy;
+        if (a % 3 != 0 || b % 3 != 0) return 0;
+        *m = a / 3;
+        *n = b / 3;
+        return 1;
+    }
+    return 0;
+}
+
+static void tetrille_translate_cycle(Cycle *c, int m6, int n6) {
+    for (int i = 0; i < c->n; i++) {
+        Coord *p = &c->v[i];
+        if (p->v == 6) {
+            p->x += m6;
+            p->y += n6;
+        } else if (p->v == 4) {
+            p->x += 2 * m6;
+            p->y += 2 * n6;
+        } else if (p->v == 3) {
+            p->x += 2 * m6 + n6;
+            p->y += -m6 + n6;
+        } else {
+            p->x += m6;
+            p->y += n6;
+        }
+    }
+}
+
 static int lattice_dir_count(int lattice) {
-    return (lattice == TILE_LATTICE_TRIANGULAR) ? 6 : 4;
+    if (lattice == TILE_LATTICE_TRIANGULAR) return 6;
+    if (lattice == TILE_LATTICE_TETRILLE) return 6;
+    return 4;
 }
 
 static int dir_index_lattice(int lattice, Edge e) {
     int dx = e.b.x - e.a.x;
     int dy = e.b.y - e.a.y;
+
+    if (lattice == TILE_LATTICE_TETRILLE) {
+        TaggedVec tv;
+        if (!tetrille_edge_tag(e, &tv)) return -1;
+        dx = tv.dx;
+        dy = tv.dy;
+        if (dx == 1 && dy == 0) return 0;
+        if (dx == 0 && dy == 1) return 1;
+        if (dx == -1 && dy == 1) return 2;
+        if (dx == -1 && dy == 0) return 3;
+        if (dx == 0 && dy == -1) return 4;
+        if (dx == 1 && dy == -1) return 5;
+        return -1;
+    }
 
     if (lattice == TILE_LATTICE_TRIANGULAR) {
         if (dx == 1 && dy == 0) return 0;
@@ -45,62 +171,182 @@ static int dir_index_lattice(int lattice, Edge e) {
 
 /* ---------- point-in-cycle (ray casting) ---------- */
 
-static int point_in_cycle(double px, double py, const Cycle *c) {
+static void embed_point(int lattice, Coord p, double *x, double *y) {
+    if (lattice == TILE_LATTICE_TETRILLE) {
+        long long sx, sy;
+        if (p.v == 6) {
+            sx = 6LL * p.x;
+            sy = 6LL * p.y;
+        } else if (p.v == 4) {
+            sx = 3LL * p.x;
+            sy = 3LL * p.y;
+        } else {
+            sx = 2LL * (p.x - p.y);
+            sy = 2LL * (p.x + 2LL * p.y);
+        }
+        *x = (double)sx;
+        *y = (double)sy;
+        return;
+    }
+
+    *x = (double)p.x;
+    *y = (double)p.y;
+}
+
+static int point_in_cycle(double px, double py, const Cycle *c, int lattice) {
     int inside = 0;
     for (int i = 0, j = c->n - 1; i < c->n; j = i++) {
-        double xi = c->v[i].x, yi = c->v[i].y;
-        double xj = c->v[j].x, yj = c->v[j].y;
+        double xi, yi, xj, yj;
+        embed_point(lattice, c->v[i], &xi, &yi);
+        embed_point(lattice, c->v[j], &xj, &yj);
 
         if ((yi > py) != (yj > py)) {
             double xint = xi + (py - yi) * (xj - xi) / (yj - yi);
-            if (xint > px)
-                inside = !inside;
+            if (xint > px) inside = !inside;
         }
     }
     return inside;
 }
 
-static void cycle_sample_point(const Cycle *c, double *px, double *py) {
-    *px = (c->v[0].x + c->v[1].x + c->v[2].x) / 3.0;
-    *py = (c->v[0].y + c->v[1].y + c->v[2].y) / 3.0;
+static int cycle_interior_point(const Cycle *c, int lattice, double *px, double *py) {
+    long long area2 = cycle_signed_area2(c, lattice);
+    if (area2 == 0) return 0;
+
+    for (int i = 0; i < c->n; i++) {
+        Coord a = c->v[i];
+        Coord b = c->v[(i + 1) % c->n];
+        double ax, ay, bx, by;
+        double dx, dy, nx, ny, scale;
+        double mx, my, sx, sy;
+
+        embed_point(lattice, a, &ax, &ay);
+        embed_point(lattice, b, &bx, &by);
+        dx = bx - ax;
+        dy = by - ay;
+        if (dx == 0.0 && dy == 0.0) continue;
+
+        if (area2 > 0) {
+            nx = -dy;
+            ny = dx;
+        } else {
+            nx = dy;
+            ny = -dx;
+        }
+
+        scale = fabs(nx) > fabs(ny) ? fabs(nx) : fabs(ny);
+        if (scale == 0.0) continue;
+
+        mx = (ax + bx) / 2.0;
+        my = (ay + by) / 2.0;
+        sx = mx + 0.25 * nx / scale;
+        sy = my + 0.25 * ny / scale;
+        if (point_in_cycle(sx, sy, c, lattice)) {
+            *px = sx;
+            *py = sy;
+            return 1;
+        }
+    }
+
+    for (int i = 0; i < c->n; i++) {
+        Coord a = c->v[(i + c->n - 1) % c->n];
+        Coord b = c->v[i];
+        Coord d = c->v[(i + 1) % c->n];
+        double ax, ay, bx, by, dx, dy;
+        double cross;
+
+        embed_point(lattice, a, &ax, &ay);
+        embed_point(lattice, b, &bx, &by);
+        embed_point(lattice, d, &dx, &dy);
+
+        cross = (bx - ax) * (dy - by) - (by - ay) * (dx - bx);
+        if (cross == 0.0) continue;
+        if ((area2 > 0 && cross > 0.0) || (area2 < 0 && cross < 0.0)) {
+            *px = (ax + bx + dx) / 3.0;
+            *py = (ay + by + dy) / 3.0;
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 /* ---------- overlap validation ---------- */
 
-static int has_overlap_via_tile_test(const Poly *p, const Cycle *tile) {
+static int find_outer_cycle(const Poly *p, int lattice) {
+    int outer = 0;
+    long long best = cycle_signed_area2(&p->cycles[0], lattice);
+    if (best < 0) best = -best;
     for (int i = 1; i < p->cycle_count; i++) {
-        const Cycle *c = &p->cycles[i];
-        if (c->n < 3) continue;
+        long long area = cycle_signed_area2(&p->cycles[i], lattice);
+        if (area < 0) area = -area;
+        if (area > best) {
+            best = area;
+            outer = i;
+        }
+    }
+    return outer;
+}
 
+static int has_overlap_via_tile_test(const Poly *p, const Cycle *tile, int lattice) {
+    int outer = find_outer_cycle(p, lattice);
+    for (int i = 0; i < p->cycle_count; i++) {
+        const Cycle *c;
         double px, py;
-        cycle_sample_point(c, &px, &py);
-
-        if (point_in_cycle(px, py, tile))
-            return 1;
+        if (i == outer) continue;
+        c = &p->cycles[i];
+        if (c->n < 3) continue;
+        if (!cycle_interior_point(c, lattice, &px, &py)) continue;
+        if (point_in_cycle(px, py, tile, lattice)) return 1;
     }
     return 0;
 }
 
 /* ---------- geometry core ---------- */
 
-static int align_tile(const Cycle *tile, int tile_edge_index, Edge target, Cycle *out) {
+static int align_tile(const Cycle *tile, int tile_edge_index, Edge target, int lattice, Cycle *out) {
     Edge te = cycle_edge(tile, tile_edge_index);
-    int tdx = te.b.x - te.a.x;
-    int tdy = te.b.y - te.a.y;
-    int bdx = target.a.x - target.b.x;
-    int bdy = target.a.y - target.b.y;
 
-    if (tdx != bdx || tdy != bdy) return 0;
+    if (lattice == TILE_LATTICE_TETRILLE) {
+        TaggedVec ta, tb;
+        int m6, n6, dx, dy;
+        if (!tetrille_edge_tag(te, &ta) || !tetrille_edge_tag(target, &tb)) return 0;
+        if (ta.system != tb.system) return 0;
+        if (ta.dx != -tb.dx || ta.dy != -tb.dy) return 0;
+        if (te.a.v != target.b.v || te.b.v != target.a.v) return 0;
 
-    *out = *tile;
+        dx = target.b.x - te.a.x;
+        dy = target.b.y - te.a.y;
+        if (!tetrille_delta_to_6(te.a.v, dx, dy, &m6, &n6)) return 0;
+
+        *out = *tile;
+        tetrille_translate_cycle(out, m6, n6);
+
+        {
+            Edge ne = cycle_edge(out, tile_edge_index);
+            if (!coord_eq(ne.a, target.b)) return 0;
+            if (!coord_eq(ne.b, target.a)) return 0;
+        }
+        return 1;
+    }
 
     {
-        Edge ne = cycle_edge(out, tile_edge_index);
-        int dx = target.b.x - ne.a.x;
-        int dy = target.b.y - ne.a.y;
-        cycle_translate(out, dx, dy);
+        int tdx = te.b.x - te.a.x;
+        int tdy = te.b.y - te.a.y;
+        int bdx = target.a.x - target.b.x;
+        int bdy = target.a.y - target.b.y;
+
+        if (tdx != bdx || tdy != bdy) return 0;
+
+        *out = *tile;
+
+        {
+            Edge ne = cycle_edge(out, tile_edge_index);
+            int tx = target.b.x - ne.a.x;
+            int ty = target.b.y - ne.a.y;
+            cycle_translate(out, tx, ty);
+        }
+        return 1;
     }
-    return 1;
 }
 
 int build_frontier_edges(const Poly *p, Edge *edges) {
@@ -145,7 +391,7 @@ int align_tile_to_frontier_edge(const Poly *base, const Cycle *tile_variant,
     Edge frontier[MAX_VERTS * MAX_CYCLES];
     int frontier_n = build_frontier_edges(base, frontier);
     if (base_edge_index < 0 || base_edge_index >= frontier_n) return 0;
-    return align_tile(tile_variant, tile_edge_index, frontier[base_edge_index], aligned);
+    return align_tile(tile_variant, tile_edge_index, frontier[base_edge_index], TILE_LATTICE_SQUARE, aligned);
 }
 
 static int build_union_edges(const Poly *a, const Cycle *b, LEdge *out, int *out_n) {
@@ -248,12 +494,24 @@ static int find_start_edge(const Edge *edges, int m, const int *used, int lattic
     int start = -1;
 
     for (int i = 0; i < m; i++) {
+        double ix, iy;
+        double sx, sy;
+        int idir, sdir;
+
         if (used[i]) continue;
-        if (start < 0 ||
-            edges[i].a.x < edges[start].a.x ||
-            (edges[i].a.x == edges[start].a.x && edges[i].a.y < edges[start].a.y) ||
-            (edges[i].a.x == edges[start].a.x && edges[i].a.y == edges[start].a.y &&
-             dir_index_lattice(lattice, edges[i]) < dir_index_lattice(lattice, edges[start]))) {
+        embed_point(lattice, edges[i].a, &ix, &iy);
+        idir = dir_index_lattice(lattice, edges[i]);
+
+        if (start < 0) {
+            start = i;
+            continue;
+        }
+
+        embed_point(lattice, edges[start].a, &sx, &sy);
+        sdir = dir_index_lattice(lattice, edges[start]);
+        if (ix < sx ||
+            (ix == sx && iy < sy) ||
+            (ix == sx && iy == sy && idir < sdir)) {
             start = i;
         }
     }
@@ -312,12 +570,12 @@ int try_attach_tile_poly(const Poly *base, const Cycle *tile_variant,
     frontier_n = build_frontier_edges(base, frontier);
     if (base_edge_index < 0 || base_edge_index >= frontier_n) return 0;
 
-    if (!align_tile(tile_variant, tile_edge_index, frontier[base_edge_index], &aligned)) return 0;
+    if (!align_tile(tile_variant, tile_edge_index, frontier[base_edge_index], lattice, &aligned)) return 0;
 
     if (!build_union_edges(base, &aligned, merged, &merged_n)) return 0;
     if (!extract_cycles(merged, merged_n, 1, lattice, out)) return 0;
 
-    if (has_overlap_via_tile_test(out, &aligned)) return 0;
+    if (has_overlap_via_tile_test(out, &aligned, lattice)) return 0;
 
     return 1;
 }

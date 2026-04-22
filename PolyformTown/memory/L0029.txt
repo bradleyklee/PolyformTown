@@ -1,0 +1,3 @@
+Tetrille coordinates are not one interchangeable plane: v=6, v=4, and v=3
+are tagged sublattices embedded in integer 6-space, and every coordinate
+pair must be interpreted relative to its tag.

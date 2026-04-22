@@ -22,7 +22,7 @@ typedef struct { int valence; char e11[MAX_EXPR], e12[MAX_EXPR], e21[MAX_EXPR], 
 typedef struct { int v, x, y; } VPoint;
 typedef struct { int n; VPoint v[MAX_VERTS_PER_CYCLE]; } Path;
 typedef struct {
-    int hole_count;
+    int hole_flag;
     int constant_count;
     Constant constants[MAX_CONSTS];
     int basis_count;
@@ -371,7 +371,7 @@ static int parse_shape_line(const char *line, Shape *s) {
     const char *p = line;
     memset(s, 0, sizeof(*s));
     if (!expect_char(&p, '[')) return 0;
-    if (!parse_int(&p, &s->hole_count)) return 0;
+    if (!parse_int(&p, &s->hole_flag)) return 0;
     if (!expect_char(&p, '|')) return 0;
     if (!parse_constants_block(&p, s)) return 0;
     if (!expect_char(&p, '|')) return 0;
@@ -387,7 +387,8 @@ static int parse_shape_line(const char *line, Shape *s) {
             break;
         }
     }
-    if (s->cycle_count != s->hole_count + 1) return 0;
+    if (s->hole_flag == 0 && s->cycle_count != 1) return 0;
+    if (s->hole_flag == 1 && s->cycle_count < 2) return 0;
 
     for (int i = 0; i < s->basis_count; i++) {
         s->bases[i].a11 = eval_expr_text(s, s->bases[i].e11);

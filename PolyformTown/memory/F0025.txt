@@ -1,0 +1,4 @@
+The Hat tiling does not have holes, and it disallows polyform configurations
+that do not grow infinitely. Proof of the hat's aperiodicity follows from a 
+lot of calculations of polyform data. We might not do all of these calculations, 
+but it's a good idea to do at least a few of them as Proof of Concept. 
