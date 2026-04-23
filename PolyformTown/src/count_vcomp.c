@@ -1,82 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "cycle.h"
 #include "tile.h"
 #include "hash.h"
-#include "vec.h"
 #include "vcomp.h"
 
-typedef struct {
-    HashTable *seen_levels;
-    PolyVec *levels;
-    int lattice;
-    int current_level;
-    int max_level;
-} EmitCtx;
+#define MAX_LEVELS 32
+#define MAX_HIDDEN (MAX_VERTS * MAX_CYCLES)
 
-static void collect_emit(const Poly *p, int steps, void *userdata) {
-    EmitCtx *ctx = (EmitCtx *)userdata;
-    Poly canon;
-    int dst = ctx->current_level + steps;
-    if (dst > ctx->max_level) return;
-    poly_canonicalize_lattice(p, &canon, ctx->lattice);
-    if (hash_insert(&ctx->seen_levels[dst], &canon)) {
-        vec_push(&ctx->levels[dst], &canon);
-    }
-}
+typedef struct { Poly poly; Coord hidden[MAX_HIDDEN]; int hidden_count; } State;
+typedef struct { State *data; size_t count, cap; } StateVec;
+typedef struct { StateVec *levels; HashTable *poly_seen; int lattice; int max_level; } EmitCtx;
 
-int main(int argc, char **argv) {
-    int max_n = 5;
-    const char *tile_path = "tiles/monomino.tile";
-    if (argc > 1) max_n = atoi(argv[1]);
-    if (argc > 2) tile_path = argv[2];
-    if (max_n < 0) max_n = 0;
-    if (max_n > 31) max_n = 31;
+static void sv_init(StateVec *v){v->data=NULL;v->count=v->cap=0;}
+static void sv_destroy(StateVec *v){free(v->data);} 
+static void sv_push(StateVec *v,const State *s){ if(v->count==v->cap){ size_t nc=v->cap?2*v->cap:64; v->data=realloc(v->data,nc*sizeof(*v->data)); if(!v->data){fprintf(stderr,"oom\n"); exit(1);} v->cap=nc;} v->data[v->count++]=*s; }
+static int coord_cmp(const void *A,const void *B){ const Coord *a=A,*b=B; if(a->v!=b->v) return a->v-b->v; if(a->x!=b->x) return a->x-b->x; return a->y-b->y; }
+static int poly_equal_local(const Poly *a,const Poly *b){ if(a->cycle_count!=b->cycle_count) return 0; for(int k=0;k<a->cycle_count;k++){ const Cycle *ca=&a->cycles[k], *cb=&b->cycles[k]; if(ca->n!=cb->n) return 0; for(int i=0;i<ca->n;i++) if(ca->v[i].v!=cb->v[i].v||ca->v[i].x!=cb->v[i].x||ca->v[i].y!=cb->v[i].y) return 0;} return 1; }
+static int state_equal(const State *a,const State *b){ if(!poly_equal_local(&a->poly,&b->poly)||a->hidden_count!=b->hidden_count) return 0; for(int i=0;i<a->hidden_count;i++) if(!coord_eq(a->hidden[i],b->hidden[i])) return 0; return 1; }
+static int sv_contains(const StateVec *v,const State *s){ for(size_t i=0;i<v->count;i++) if(state_equal(&v->data[i],s)) return 1; return 0; }
 
-    Tile tile;
-    if (!tile_load(tile_path, &tile)) {
-        fprintf(stderr, "failed to load tile: %s\n", tile_path);
-        return 1;
-    }
+static void collect_emit(const Poly *p,const Coord *hidden,int hidden_count,void *userdata){
+    EmitCtx *ctx=userdata; if(hidden_count>ctx->max_level) return; State s; s.poly=*p; s.hidden_count=hidden_count; for(int i=0;i<hidden_count;i++) s.hidden[i]=hidden[i]; qsort(s.hidden,s.hidden_count,sizeof(Coord),coord_cmp); if(!sv_contains(&ctx->levels[hidden_count],&s)){ sv_push(&ctx->levels[hidden_count],&s); Poly canon; poly_canonicalize_lattice(p,&canon,ctx->lattice); hash_insert(&ctx->poly_seen[hidden_count],&canon);} }
 
-    Poly seed_raw, seed;
-    seed_raw.cycle_count = 1;
-    seed_raw.cycles[0] = tile.base;
-    poly_canonicalize_lattice(&seed_raw, &seed, tile.lattice);
-
-    PolyVec levels[32];
-    HashTable seen_levels[32];
-    EmitCtx ectx;
-
-    for (int i = 0; i <= max_n; i++) {
-        vec_init(&levels[i], 64);
-        hash_init(&seen_levels[i], 1024);
-    }
-    vec_push(&levels[0], &seed);
-    hash_insert(&seen_levels[0], &seed);
-
-    ectx.seen_levels = seen_levels;
-    ectx.levels = levels;
-    ectx.lattice = tile.lattice;
-    ectx.max_level = max_n;
-
-    for (int level = 0; level <= max_n; level++) {
-        if (level > 0) printf("n=%d count=%zu\n", level, levels[level].count);
-        if (level == max_n) break;
-        ectx.current_level = level;
-        for (size_t i = 0; i < levels[level].count; i++) {
-            Coord verts[MAX_VERTS * MAX_CYCLES];
-            int vc = build_boundary_vertices(&levels[level].data[i], verts);
-            for (int j = 0; j < vc; j++) {
-                enumerate_vertex_completions(&levels[level].data[i], &tile,
-                                             verts[j], collect_emit, &ectx);
-            }
-        }
-    }
-
-    for (int i = 0; i <= max_n; i++) {
-        hash_destroy(&seen_levels[i]);
-        vec_destroy(&levels[i]);
-    }
-    return 0;
-}
+int main(int argc,char **argv){ int max_n=5; const char *tile_path="tiles/monomino.tile"; if(argc>1) max_n=atoi(argv[1]); if(argc>2) tile_path=argv[2]; if(max_n<0) max_n=0; if(max_n>=MAX_LEVELS) max_n=MAX_LEVELS-1; Tile tile; if(!tile_load(tile_path,&tile)){ fprintf(stderr,"failed to load tile: %s\n",tile_path); return 1; } Poly seed_raw, seed; seed_raw.cycle_count=1; seed_raw.cycles[0]=tile.base; poly_canonicalize_lattice(&seed_raw,&seed,tile.lattice); StateVec levels[MAX_LEVELS]; HashTable poly_seen[MAX_LEVELS]; for(int i=0;i<=max_n;i++){ sv_init(&levels[i]); hash_init(&poly_seen[i],1024);} State seed_state; memset(&seed_state,0,sizeof(seed_state)); seed_state.poly=seed; sv_push(&levels[0],&seed_state); hash_insert(&poly_seen[0],&seed); EmitCtx ectx={levels,poly_seen,tile.lattice,max_n}; for(int level=0; level<=max_n; level++){ if(level>0) printf("n=%d count=%zu\n", level, poly_seen[level].count); if(level==max_n) break; for(size_t i=0;i<levels[level].count;i++){ Coord verts[MAX_VERTS*MAX_CYCLES]; int vc=build_boundary_vertices(&levels[level].data[i].poly, verts); for(int j=0;j<vc;j++){ enumerate_vertex_completions(&levels[level].data[i].poly,&tile,verts[j],levels[level].data[i].hidden,levels[level].data[i].hidden_count,collect_emit,&ectx); } } } for(int i=0;i<=max_n;i++){ hash_destroy(&poly_seen[i]); sv_destroy(&levels[i]); } return 0; }
