@@ -1,5 +1,6 @@
 #include "vcomp.h"
 #include "attach.h"
+#include "lattice.h"
 #include "tetrille.h"
 #include <string.h>
 
@@ -15,23 +16,6 @@ typedef struct {
 
 static int coord_in_list(const Coord *verts, int count, Coord v) {
     for (int i = 0; i < count; i++) if (coord_eq(verts[i], v)) return 1;
-    return 0;
-}
-
-static int coord_adjacent_lattice(Coord a, Coord b, int lattice) {
-    int dx = b.x - a.x;
-    int dy = b.y - a.y;
-    if (lattice == TILE_LATTICE_TETRILLE) {
-        return tetrille_coords_adjacent(a, b);
-    }
-    if (dx == 1 && dy == 0) return 1;
-    if (dx == -1 && dy == 0) return 1;
-    if (dx == 0 && dy == 1) return 1;
-    if (dx == 0 && dy == -1) return 1;
-    if (lattice != TILE_LATTICE_SQUARE) {
-        if (dx == 1 && dy == -1) return 1;
-        if (dx == -1 && dy == 1) return 1;
-    }
     return 0;
 }
 
@@ -97,7 +81,7 @@ static int hidden_connected_lattice(const Coord *hidden, int hidden_count, int l
         reached++;
         for (int i = 0; i < hidden_count; i++) {
             if (seen[i]) continue;
-            if (!coord_adjacent_lattice(hidden[cur], hidden[i], lattice)) continue;
+            if (!lattice_coords_adjacent(lattice, hidden[cur], hidden[i])) continue;
             seen[i] = 1;
             queue[qt++] = i;
         }

@@ -1,15 +1,9 @@
 #include "tile.h"
+#include "lattice.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-
-static int lattice_transform_count(int lattice) {
-    if (lattice == TILE_LATTICE_TRIANGULAR) return 12;
-    if (lattice == TILE_LATTICE_TETRILLE) return 12;
-    if (lattice == TILE_LATTICE_SQUARE) return 8;
-    return 1;
-}
 
 static int starts_with_label(const char *line, const char *label) {
     while (*line == ' ' || *line == '\t') line++;
