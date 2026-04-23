@@ -1,6 +1,7 @@
 #include "attach.h"
 #include <string.h>
 #include <math.h>
+#include "lattice.h"
 #include "tetrille.h"
 
 #define MAX_EDGES (MAX_VERTS)
@@ -20,77 +21,14 @@ enum {
 static int edge_same(Edge a, Edge b) { return coord_eq(a.a,b.a) && coord_eq(a.b,b.b); }
 static int edge_opp(Edge a, Edge b) { return coord_eq(a.a,b.b) && coord_eq(a.b,b.a); }
 
-static int lattice_dir_count(int lattice) {
-    if (lattice == TILE_LATTICE_TRIANGULAR) return 6;
-    if (lattice == TILE_LATTICE_TETRILLE) return 6;
-    return 4;
-}
-
-static int dir_index_lattice(int lattice, Edge e) {
-    int dx = e.b.x - e.a.x;
-    int dy = e.b.y - e.a.y;
-
-    if (lattice == TILE_LATTICE_TETRILLE) {
-        TetrilleTaggedVec tv;
-        if (!tetrille_edge_tag(e, &tv)) return -1;
-        dx = tv.dx;
-        dy = tv.dy;
-        if (dx == 1 && dy == 0) return 0;
-        if (dx == 0 && dy == 1) return 1;
-        if (dx == -1 && dy == 1) return 2;
-        if (dx == -1 && dy == 0) return 3;
-        if (dx == 0 && dy == -1) return 4;
-        if (dx == 1 && dy == -1) return 5;
-        return -1;
-    }
-
-    if (lattice == TILE_LATTICE_TRIANGULAR) {
-        if (dx == 1 && dy == 0) return 0;
-        if (dx == 0 && dy == 1) return 1;
-        if (dx == -1 && dy == 1) return 2;
-        if (dx == -1 && dy == 0) return 3;
-        if (dx == 0 && dy == -1) return 4;
-        if (dx == 1 && dy == -1) return 5;
-        return -1;
-    }
-
-    if (dx == 1 && dy == 0) return 0;
-    if (dx == 0 && dy == 1) return 1;
-    if (dx == -1 && dy == 0) return 2;
-    if (dx == 0 && dy == -1) return 3;
-    return -1;
-}
-
 /* ---------- point-in-cycle (ray casting) ---------- */
-
-static void embed_point(int lattice, Coord p, double *x, double *y) {
-    if (lattice == TILE_LATTICE_TETRILLE) {
-        long long sx, sy;
-        if (p.v == 6) {
-            sx = 6LL * p.x;
-            sy = 6LL * p.y;
-        } else if (p.v == 4) {
-            sx = 3LL * p.x;
-            sy = 3LL * p.y;
-        } else {
-            sx = 2LL * (p.x - p.y);
-            sy = 2LL * (p.x + 2LL * p.y);
-        }
-        *x = (double)sx;
-        *y = (double)sy;
-        return;
-    }
-
-    *x = (double)p.x;
-    *y = (double)p.y;
-}
 
 static int point_in_cycle(double px, double py, const Cycle *c, int lattice) {
     int inside = 0;
     for (int i = 0, j = c->n - 1; i < c->n; j = i++) {
         double xi, yi, xj, yj;
-        embed_point(lattice, c->v[i], &xi, &yi);
-        embed_point(lattice, c->v[j], &xj, &yj);
+        lattice_embed_point(lattice, c->v[i], &xi, &yi);
+        lattice_embed_point(lattice, c->v[j], &xj, &yj);
 
         if ((yi > py) != (yj > py)) {
             double xint = xi + (py - yi) * (xj - xi) / (yj - yi);
@@ -111,8 +49,8 @@ static int cycle_interior_point(const Cycle *c, int lattice, double *px, double 
         double dx, dy, nx, ny, scale;
         double mx, my, sx, sy;
 
-        embed_point(lattice, a, &ax, &ay);
-        embed_point(lattice, b, &bx, &by);
+        lattice_embed_point(lattice, a, &ax, &ay);
+        lattice_embed_point(lattice, b, &bx, &by);
         dx = bx - ax;
         dy = by - ay;
         if (dx == 0.0 && dy == 0.0) continue;
@@ -146,9 +84,9 @@ static int cycle_interior_point(const Cycle *c, int lattice, double *px, double 
         double ax, ay, bx, by, dx, dy;
         double cross;
 
-        embed_point(lattice, a, &ax, &ay);
-        embed_point(lattice, b, &bx, &by);
-        embed_point(lattice, d, &dx, &dy);
+        lattice_embed_point(lattice, a, &ax, &ay);
+        lattice_embed_point(lattice, b, &bx, &by);
+        lattice_embed_point(lattice, d, &dx, &dy);
 
         cross = (bx - ax) * (dy - by) - (by - ay) * (dx - bx);
         if (cross == 0.0) continue;
@@ -321,7 +259,7 @@ static int coord_seen_before(const Coord *seen, int seen_n, Coord c) {
 
 static int pick_next_edge(const Edge *edges, int m, const int *used, Coord v,
                           int prev_dir, int prefer_left, int lattice) {
-    int dir_count = lattice_dir_count(lattice);
+    int dir_count = lattice_direction_count(lattice);
     int rev = (prev_dir + dir_count / 2) % dir_count;
     int best = -1;
     int best_score = prefer_left ? -1 : dir_count + 1;
@@ -330,7 +268,7 @@ static int pick_next_edge(const Edge *edges, int m, const int *used, Coord v,
         if (used[i]) continue;
         if (!coord_eq(edges[i].a, v)) continue;
 
-        int d = dir_index_lattice(lattice, edges[i]);
+        int d = lattice_direction_index(lattice, edges[i]);
         if (d < 0) continue;
         int score = (d - rev + dir_count) % dir_count;
         if (score == 0) continue;
@@ -371,7 +309,7 @@ static int walk_one_cycle(const Edge *edges, int m, int *used, int start,
         Coord v = edges[cur].b;
         if (coord_eq(v, edges[start].a)) break;
 
-        int prev_dir = dir_index_lattice(lattice, edges[cur]);
+        int prev_dir = lattice_direction_index(lattice, edges[cur]);
         if (prev_dir < 0) return WALK_FAIL;
         int next = pick_next_edge(edges, m, used, v, prev_dir, prefer_left, lattice);
         if (next < 0) return WALK_FAIL;
@@ -391,16 +329,16 @@ static int find_start_edge(const Edge *edges, int m, const int *used, int lattic
         int idir, sdir;
 
         if (used[i]) continue;
-        embed_point(lattice, edges[i].a, &ix, &iy);
-        idir = dir_index_lattice(lattice, edges[i]);
+        lattice_embed_point(lattice, edges[i].a, &ix, &iy);
+        idir = lattice_direction_index(lattice, edges[i]);
 
         if (start < 0) {
             start = i;
             continue;
         }
 
-        embed_point(lattice, edges[start].a, &sx, &sy);
-        sdir = dir_index_lattice(lattice, edges[start]);
+        lattice_embed_point(lattice, edges[start].a, &sx, &sy);
+        sdir = lattice_direction_index(lattice, edges[start]);
         if (ix < sx ||
             (ix == sx && iy < sy) ||
             (ix == sx && iy == sy && idir < sdir)) {

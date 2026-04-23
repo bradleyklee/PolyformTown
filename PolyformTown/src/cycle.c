@@ -1,18 +1,11 @@
 #include "cycle.h"
 #include "tile.h"
+#include "lattice.h"
+#include "tetrille.h"
 #include <stdio.h>
 
 static void tetrille_embed6_scaled(Coord p, long long *sx, long long *sy) {
-    if (p.v == 6) {
-        *sx = 6LL * p.x;
-        *sy = 6LL * p.y;
-    } else if (p.v == 4) {
-        *sx = 3LL * p.x;
-        *sy = 3LL * p.y;
-    } else {
-        *sx = 2LL * (p.x - p.y);
-        *sy = 2LL * (p.x + 2LL * p.y);
-    }
+    tetrille_embed_point_scaled(p, sx, sy);
 }
 
 static int floor_div6(long long a) {
@@ -134,12 +127,6 @@ void cycle_canonicalize_shift(Cycle *c) {
 }
 
 static int cycle_abs_area_cmp_desc(const Cycle *a, const Cycle *b, int lattice);
-
-static int lattice_transform_count(int lattice) {
-    if (lattice == TILE_LATTICE_TRIANGULAR) return 12;
-    if (lattice == TILE_LATTICE_TETRILLE) return 12;
-    return 8;
-}
 
 static Coord square_apply(Coord p, int t) {
     int x = p.x, y = p.y;
@@ -461,4 +448,3 @@ void poly_canonicalize_lattice(const Poly *src, Poly *out, int lattice) {
     }
     *out = best;
 }
-
