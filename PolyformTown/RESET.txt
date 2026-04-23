@@ -1,9 +1,0 @@
-This is the most recent version of your code.
-
-Read PERSONAE.txt completely.
-Read LESSONS.txt completely.
-Read FUTURES.txt to understand direction.
-Read README.txt for user-facing behavior.
-Read and understand the source code.
-
-Ask the human for next steps. 
