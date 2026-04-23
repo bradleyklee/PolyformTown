@@ -1,0 +1,6 @@
+Vertex completion tracks hidden vertices
+
+The correct state for vertex-completion is (poly, hidden-set).
+The level of a completion is |hidden-set|, not DFS depth or
+attachment count. Hidden vertices must be propagated and
+treated as part of the state.

@@ -1,1 +1,4 @@
-Trace why some offending tetrille print outputs show no 6-vertices on the outer boundary, and determine whether the loss happens before canonicalization, during canonicalization, or only in printing.
+Rewrite LESSONS for clarity
+
+Split large lesson entries into smaller atomic units.
+Standardize naming and avoid combining multiple concepts.

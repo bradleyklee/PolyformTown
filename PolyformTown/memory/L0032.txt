@@ -1,0 +1,7 @@
+Differential valence mapping
+
+Adjacency in tetrille is determined by mapping both vertices
+into a common differential valence dv = min(v1, v2). Direct
+conversion between valence systems is valid, and comparison
+must occur in a common valence system. Mixed-tag coordinates
+must not be compared without conversion.

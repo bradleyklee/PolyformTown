@@ -1,1 +1,5 @@
-Finalize tetrille canonicalization around the explicit 12*Z outer-anchor specification, verify the n=12 duplicate counterexample collapses, and keep verified kite counts through n=8 unchanged.
+Restructure code and improve abstraction
+
+Unify lattice-specific logic into shared modules. Coordinate
+transforms, adjacency, and canonicalization should not be
+duplicated across surface-level files.

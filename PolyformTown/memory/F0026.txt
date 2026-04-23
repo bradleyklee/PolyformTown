@@ -1,0 +1,4 @@
+Expand smoke tests
+
+Add tetrille (kite) checks for n=1..3 and extend coverage as
+additional counts are verified.

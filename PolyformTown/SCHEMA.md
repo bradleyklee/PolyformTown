@@ -1,4 +1,4 @@
-# Newcomer Guide
+# SCHEMA
 
 ## What this project does
 PolyformTown enumerates polyforms by repeatedly attaching a base

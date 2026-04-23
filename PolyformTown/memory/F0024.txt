@@ -1,4 +1,5 @@
-Extend memory reach for larger runs by profiling peak RSS and hash growth,
-reducing per-poly memory footprint where practical, and considering more
-compact or staged dedup workflows that preserve verified counts and smoke
-tests.
+Quality analysis of existing functionality
+
+Verify counts beyond current tested ranges for triangle, hex,
+and tetrille systems. Add regression checks and compare
+against known or derived sequences.

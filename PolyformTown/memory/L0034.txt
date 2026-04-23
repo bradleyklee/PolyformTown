@@ -1,0 +1,5 @@
+Tetrille boundaries do not require a v6 vertex
+
+Valid boundary cycles may consist entirely of v=3 and v=4
+vertices. Algorithms must not assume the presence of a v=6
+vertex. Canonicalization must not rely on a v=6 anchor.
