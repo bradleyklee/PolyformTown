@@ -1,5 +1,6 @@
 #include "vcomp.h"
 #include "attach.h"
+#include "tetrille.h"
 #include <string.h>
 
 #define MAX_BOUNDARY_VERTS (MAX_VERTS * MAX_CYCLES)
@@ -20,6 +21,9 @@ static int coord_in_list(const Coord *verts, int count, Coord v) {
 static int coord_adjacent_lattice(Coord a, Coord b, int lattice) {
     int dx = b.x - a.x;
     int dy = b.y - a.y;
+    if (lattice == TILE_LATTICE_TETRILLE) {
+        return tetrille_coords_adjacent(a, b);
+    }
     if (dx == 1 && dy == 0) return 1;
     if (dx == -1 && dy == 0) return 1;
     if (dx == 0 && dy == 1) return 1;
@@ -32,6 +36,9 @@ static int coord_adjacent_lattice(Coord a, Coord b, int lattice) {
 }
 
 static int point_on_segment(Coord p, Coord a, Coord b, int lattice) {
+    if (lattice == TILE_LATTICE_TETRILLE) {
+        return tetrille_point_on_segment(p, a, b);
+    }
     if (a.x == b.x) {
         int ymin = (a.y < b.y) ? a.y : b.y;
         int ymax = (a.y > b.y) ? a.y : b.y;

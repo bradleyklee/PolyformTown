@@ -1,6 +1,7 @@
 #include "attach.h"
 #include <string.h>
 #include <math.h>
+#include "tetrille.h"
 
 #define MAX_EDGES (MAX_VERTS)
 #define MAX_LOCAL (4 * MAX_VERTS)
@@ -10,12 +11,6 @@ typedef struct {
     int canceled;
 } LEdge;
 
-typedef struct {
-    int system;
-    int dx;
-    int dy;
-} TaggedVec;
-
 enum {
     WALK_FAIL = 0,
     WALK_OK = 1,
@@ -24,109 +19,6 @@ enum {
 
 static int edge_same(Edge a, Edge b) { return coord_eq(a.a,b.a) && coord_eq(a.b,b.b); }
 static int edge_opp(Edge a, Edge b) { return coord_eq(a.a,b.b) && coord_eq(a.b,b.a); }
-
-static int tetrille_point_to_sys3_scaled(Coord p, int *x, int *y) {
-    if (p.v == 3) {
-        *x = 2 * p.x;
-        *y = 2 * p.y;
-        return 1;
-    }
-    if (p.v == 4) {
-        *x = 2 * p.x + p.y;
-        *y = -p.x + p.y;
-        return 1;
-    }
-    if (p.v == 6) {
-        *x = 4 * p.x + 2 * p.y;
-        *y = -2 * p.x + 2 * p.y;
-        return 1;
-    }
-    return 0;
-}
-
-static int tetrille_point_to_sys4(Coord p, int *x, int *y) {
-    if (p.v == 4) {
-        *x = p.x;
-        *y = p.y;
-        return 1;
-    }
-    if (p.v == 6) {
-        *x = 2 * p.x;
-        *y = 2 * p.y;
-        return 1;
-    }
-    return 0;
-}
-
-static int tetrille_edge_tag(Edge e, TaggedVec *tv) {
-    int system = e.a.v < e.b.v ? e.a.v : e.b.v;
-    int ax, ay, bx, by;
-    if (system == 3) {
-        if (!tetrille_point_to_sys3_scaled(e.a, &ax, &ay)) return 0;
-        if (!tetrille_point_to_sys3_scaled(e.b, &bx, &by)) return 0;
-        tv->system = 3;
-        tv->dx = bx - ax;
-        tv->dy = by - ay;
-        return 1;
-    }
-    if (system == 4) {
-        if (!tetrille_point_to_sys4(e.a, &ax, &ay)) return 0;
-        if (!tetrille_point_to_sys4(e.b, &bx, &by)) return 0;
-        tv->system = 4;
-        tv->dx = bx - ax;
-        tv->dy = by - ay;
-        return 1;
-    }
-    if (system == 6) {
-        tv->system = 6;
-        tv->dx = e.b.x - e.a.x;
-        tv->dy = e.b.y - e.a.y;
-        return 1;
-    }
-    return 0;
-}
-
-static int tetrille_delta_to_6(int valence, int dx, int dy, int *m, int *n) {
-    if (valence == 6) {
-        *m = dx;
-        *n = dy;
-        return 1;
-    }
-    if (valence == 4) {
-        if ((dx & 1) || (dy & 1)) return 0;
-        *m = dx / 2;
-        *n = dy / 2;
-        return 1;
-    }
-    if (valence == 3) {
-        int a = dx - dy;
-        int b = dx + 2 * dy;
-        if (a % 3 != 0 || b % 3 != 0) return 0;
-        *m = a / 3;
-        *n = b / 3;
-        return 1;
-    }
-    return 0;
-}
-
-static void tetrille_translate_cycle(Cycle *c, int m6, int n6) {
-    for (int i = 0; i < c->n; i++) {
-        Coord *p = &c->v[i];
-        if (p->v == 6) {
-            p->x += m6;
-            p->y += n6;
-        } else if (p->v == 4) {
-            p->x += 2 * m6;
-            p->y += 2 * n6;
-        } else if (p->v == 3) {
-            p->x += 2 * m6 + n6;
-            p->y += -m6 + n6;
-        } else {
-            p->x += m6;
-            p->y += n6;
-        }
-    }
-}
 
 static int lattice_dir_count(int lattice) {
     if (lattice == TILE_LATTICE_TRIANGULAR) return 6;
@@ -139,7 +31,7 @@ static int dir_index_lattice(int lattice, Edge e) {
     int dy = e.b.y - e.a.y;
 
     if (lattice == TILE_LATTICE_TETRILLE) {
-        TaggedVec tv;
+        TetrilleTaggedVec tv;
         if (!tetrille_edge_tag(e, &tv)) return -1;
         dx = tv.dx;
         dy = tv.dy;
@@ -307,7 +199,7 @@ static int align_tile(const Cycle *tile, int tile_edge_index, Edge target, int l
     Edge te = cycle_edge(tile, tile_edge_index);
 
     if (lattice == TILE_LATTICE_TETRILLE) {
-        TaggedVec ta, tb;
+        TetrilleTaggedVec ta, tb;
         int m6, n6, dx, dy;
         if (!tetrille_edge_tag(te, &ta) || !tetrille_edge_tag(target, &tb)) return 0;
         if (ta.system != tb.system) return 0;
