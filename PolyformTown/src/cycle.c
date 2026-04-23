@@ -442,9 +442,18 @@ void poly_canonicalize_lattice(const Poly *src, Poly *out, int lattice) {
     }
 
     if (first) {
-        best = *src;
-        poly_normalize_position(&best, lattice);
-        poly_prepare_cycles(&best, lattice);
+        Poly fallback = {0}, cur2;
+        int first2 = 1;
+        for (int t = 0; t < 12; t++) {
+            poly_transform_lattice(src, &cur2, lattice, t);
+            poly_normalize_position(&cur2, lattice);
+            poly_prepare_cycles(&cur2, lattice);
+            if (first2 || poly_less(&cur2, &fallback)) {
+                fallback = cur2;
+                first2 = 0;
+            }
+        }
+        best = fallback;
     }
     *out = best;
 }
