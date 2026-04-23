@@ -4,7 +4,7 @@
 #include "cycle.h"
 #include "tile.h"
 
-typedef void (*VCompEmitFn)(const Poly *p, void *userdata);
+typedef void (*VCompEmitFn)(const Poly *p, int steps, void *userdata);
 
 int build_boundary_vertices(const Poly *p, Coord *verts);
 void enumerate_vertex_completions(const Poly *base,
@@ -12,5 +12,7 @@ void enumerate_vertex_completions(const Poly *base,
                                   Coord target,
                                   VCompEmitFn emit,
                                   void *userdata);
+int vcomp_square_interior_connected(const Poly *p);
+int vcomp_build_interior_vertices_square(const Poly *p, Coord *out);
 
 #endif

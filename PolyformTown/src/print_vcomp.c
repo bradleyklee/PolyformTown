@@ -7,16 +7,22 @@
 #include "vcomp.h"
 
 typedef struct {
-    HashTable *seen;
-    PolyVec *next;
+    HashTable *seen_levels;
+    PolyVec *levels;
     int lattice;
+    int current_level;
+    int max_level;
 } EmitCtx;
 
-static void collect_emit(const Poly *p, void *userdata) {
+static void collect_emit(const Poly *p, int steps, void *userdata) {
     EmitCtx *ctx = (EmitCtx *)userdata;
     Poly canon;
+    int dst = ctx->current_level + steps;
+    if (dst > ctx->max_level) return;
     poly_canonicalize_lattice(p, &canon, ctx->lattice);
-    if (hash_insert(ctx->seen, &canon)) vec_push(ctx->next, &canon);
+    if (hash_insert(&ctx->seen_levels[dst], &canon)) {
+        vec_push(&ctx->levels[dst], &canon);
+    }
 }
 
 int main(int argc, char **argv) {
@@ -38,38 +44,43 @@ int main(int argc, char **argv) {
     seed_raw.cycles[0] = tile.base;
     poly_canonicalize_lattice(&seed_raw, &seed, tile.lattice);
 
-    PolyVec cur, next;
-    vec_init(&cur, 64);
-    vec_init(&next, 64);
-    vec_push(&cur, &seed);
+    PolyVec levels[32];
+    HashTable seen_levels[32];
+    EmitCtx ectx;
+
+    for (int i = 0; i <= max_n; i++) {
+        vec_init(&levels[i], 64);
+        hash_init(&seen_levels[i], 1024);
+    }
+    vec_push(&levels[0], &seed);
+    hash_insert(&seen_levels[0], &seed);
+
+    ectx.seen_levels = seen_levels;
+    ectx.levels = levels;
+    ectx.lattice = tile.lattice;
+    ectx.max_level = max_n;
 
     for (int level = 0; level <= max_n; level++) {
         if (level == max_n) {
-            for (size_t i = 0; i < cur.count; i++) tile_print_imgtable_shape(&tile, &cur.data[i]);
+            for (size_t i = 0; i < levels[level].count; i++) {
+                tile_print_imgtable_shape(&tile, &levels[level].data[i]);
+            }
             break;
         }
-
-        HashTable seen;
-        EmitCtx ectx;
-        hash_init(&seen, 1024);
-        vec_clear(&next);
-        ectx.seen = &seen;
-        ectx.next = &next;
-        ectx.lattice = tile.lattice;
-
-        for (size_t i = 0; i < cur.count; i++) {
+        ectx.current_level = level;
+        for (size_t i = 0; i < levels[level].count; i++) {
             Coord verts[MAX_VERTS * MAX_CYCLES];
-            int vc = build_boundary_vertices(&cur.data[i], verts);
+            int vc = build_boundary_vertices(&levels[level].data[i], verts);
             for (int j = 0; j < vc; j++) {
-                enumerate_vertex_completions(&cur.data[i], &tile, verts[j], collect_emit, &ectx);
+                enumerate_vertex_completions(&levels[level].data[i], &tile,
+                                             verts[j], collect_emit, &ectx);
             }
         }
-
-        hash_destroy(&seen);
-        PolyVec tmp = cur; cur = next; next = tmp;
     }
 
-    vec_destroy(&cur);
-    vec_destroy(&next);
+    for (int i = 0; i <= max_n; i++) {
+        hash_destroy(&seen_levels[i]);
+        vec_destroy(&levels[i]);
+    }
     return 0;
 }
