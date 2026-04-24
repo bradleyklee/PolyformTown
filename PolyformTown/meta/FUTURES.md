@@ -1,4 +1,4 @@
-This file is a priority-ordered index into memory/ futures.
+This file is a priority-ordered index into `meta/memory/` futures.
 
 Entries are pursued in order. Reordering does not change file
 index number or title. Complete items are not deleted.
