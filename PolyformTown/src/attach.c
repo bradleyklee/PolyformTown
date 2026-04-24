@@ -391,6 +391,16 @@ int try_attach_tile_poly(const Poly *base, const Cycle *tile_variant,
                          int lattice,
                          int base_edge_index, int tile_edge_index,
                          Poly *out) {
+    return try_attach_tile_poly_ex(base, tile_variant, lattice,
+                                   base_edge_index, tile_edge_index,
+                                   out, NULL);
+}
+
+int try_attach_tile_poly_ex(const Poly *base, const Cycle *tile_variant,
+                            int lattice,
+                            int base_edge_index, int tile_edge_index,
+                            Poly *out,
+                            Cycle *aligned_out) {
     Edge frontier[MAX_VERTS * MAX_CYCLES];
     Cycle aligned;
     LEdge merged[MAX_LOCAL];
@@ -406,6 +416,7 @@ int try_attach_tile_poly(const Poly *base, const Cycle *tile_variant,
     if (!extract_cycles(merged, merged_n, 1, lattice, out)) return 0;
 
     if (has_overlap_via_tile_test(out, &aligned, lattice)) return 0;
+    if (aligned_out) *aligned_out = aligned;
 
     return 1;
 }

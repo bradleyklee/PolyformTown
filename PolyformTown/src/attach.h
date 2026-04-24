@@ -14,5 +14,10 @@ int try_attach_tile_poly(const Poly *base, const Cycle *tile_variant,
                          int lattice,
                          int base_edge_index, int tile_edge_index,
                          Poly *out);
+int try_attach_tile_poly_ex(const Poly *base, const Cycle *tile_variant,
+                            int lattice,
+                            int base_edge_index, int tile_edge_index,
+                            Poly *out,
+                            Cycle *aligned_out);
 
 #endif

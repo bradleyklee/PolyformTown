@@ -5,11 +5,14 @@
 
 #define VCOMP_MAX_LEVELS 32
 #define VCOMP_MAX_HIDDEN (MAX_VERTS * MAX_CYCLES)
+#define VCOMP_MAX_TILES 128
 
 typedef struct {
     Poly poly;
     Coord hidden[VCOMP_MAX_HIDDEN];
     int hidden_count;
+    Cycle tiles[VCOMP_MAX_TILES];
+    int tile_count;
 } VCompState;
 
 typedef struct {

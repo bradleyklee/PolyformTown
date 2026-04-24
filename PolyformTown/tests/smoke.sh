@@ -50,5 +50,4 @@ check_contains "$line" "[ 0 | (r=sqrt(3)) | (6:1,0;1/2,r/2) | (6 0 0,6 1 0,6 0 1
 line="$(./vcomp_print 0 tiles/triangle.tile | head -n 1)"
 check_contains "$line" "[ 0 | (r=sqrt(3)) | (6:1,0;1/2,r/2) | (6 0 0,6 1 0,6 0 1) ]" "vcomp_print format"
 
-
 echo 0

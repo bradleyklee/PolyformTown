@@ -6,6 +6,7 @@
 
 #define MAX_LINE 65536
 #define MAX_SHAPES 512
+#define MAX_GROUPS 256
 #define MAX_CONSTS 32
 #define MAX_NAME 32
 #define MAX_EXPR 128
@@ -31,6 +32,12 @@ typedef struct {
     Path cycles[MAX_CYCLES];
 } Shape;
 typedef struct { double x, y; } DPoint;
+typedef struct {
+    Shape *aggregate;
+    Shape *tiles;
+    int tile_count;
+    int tile_cap;
+} GroupShape;
 
 typedef struct {
     const char *s;
@@ -399,17 +406,88 @@ static int parse_shape_line(const char *line, Shape *s) {
     return 1;
 }
 
-static int read_shapes(Shape *shapes, int max_shapes) {
+static int heading_index(const char *s) {
+    if (s[0] != '[') return -1;
+    if (!isdigit((unsigned char)s[1])) return -1;
+    int i = 1;
+    while (isdigit((unsigned char)s[i])) i++;
+    if (s[i] != ']') return -1;
+    return atoi(s + 1);
+}
+
+static void free_groups(GroupShape *groups, int count) {
+    for (int i = 0; i < count; i++) {
+        free(groups[i].aggregate);
+        free(groups[i].tiles);
+    }
+}
+
+static int group_add_tile(GroupShape *g, const Shape *s) {
+    if (g->tile_count >= g->tile_cap) {
+        int next_cap = g->tile_cap == 0 ? 8 : g->tile_cap * 2;
+        Shape *next_tiles = (Shape *)realloc(g->tiles, (size_t)next_cap * sizeof(Shape));
+        if (!next_tiles) return 0;
+        g->tiles = next_tiles;
+        g->tile_cap = next_cap;
+    }
+    g->tiles[g->tile_count++] = *s;
+    return 1;
+}
+
+static int read_group_shapes(GroupShape *groups, int max_groups,
+                             const char *first_line) {
     char line[MAX_LINE];
     int count = 0;
-    while (count < max_shapes && fgets(line, sizeof(line), stdin)) {
-        const char *p = line;
+    int section = 0; /* 1 aggregate, 2 tiles */
+    int cur = -1;
+    const char *pending = first_line;
+    for (;;) {
+        const char *p;
+        if (pending) {
+            p = pending;
+            pending = NULL;
+        } else {
+            if (!fgets(line, sizeof(line), stdin)) break;
+            p = line;
+        }
         while (isspace((unsigned char)*p)) p++;
         if (!*p) continue;
-        if (!parse_shape_line(p, &shapes[count])) return -1;
-        count++;
+        if (heading_index(p) >= 0) {
+            if (count >= max_groups) return -1;
+            cur = count++;
+            memset(&groups[cur], 0, sizeof(groups[cur]));
+            section = 0;
+            continue;
+        }
+        if (strncmp(p, "Aggregate", 9) == 0) {
+            section = 1;
+            continue;
+        }
+        if (strncmp(p, "Tiles", 5) == 0) {
+            section = 2;
+            continue;
+        }
+        if (cur < 0) continue;
+        Shape s;
+        if (!parse_shape_line(p, &s)) continue;
+        if (section == 1 && !groups[cur].aggregate) {
+            groups[cur].aggregate = (Shape *)malloc(sizeof(Shape));
+            if (!groups[cur].aggregate) return -1;
+            *groups[cur].aggregate = s;
+        } else if (section == 2) {
+            if (!group_add_tile(&groups[cur], &s)) return -1;
+        }
     }
-    return count;
+    int kept = 0;
+    for (int i = 0; i < count; i++) {
+        if (!groups[i].aggregate) {
+            free(groups[i].tiles);
+            continue;
+        }
+        if (kept != i) groups[kept] = groups[i];
+        kept++;
+    }
+    return kept;
 }
 
 static void shape_bbox(const Shape *s, double *minx, double *miny, double *maxx, double *maxy) {
@@ -500,22 +578,147 @@ static void emit_shape_svg(FILE *fp, const Shape *s,
     fprintf(fp, "\" fill=\"#dddddd\" stroke=\"black\" stroke-width=\"%.2f\" fill-rule=\"evenodd\"/>\n", STROKE_W);
 }
 
+static void group_bbox(const GroupShape *g,
+                       double *minx, double *miny,
+                       double *maxx, double *maxy) {
+    shape_bbox(g->aggregate, minx, miny, maxx, maxy);
+    for (int i = 0; i < g->tile_count; i++) {
+        double x0, y0, x1, y1;
+        shape_bbox(&g->tiles[i], &x0, &y0, &x1, &y1);
+        if (x0 < *minx) *minx = x0;
+        if (y0 < *miny) *miny = y0;
+        if (x1 > *maxx) *maxx = x1;
+        if (y1 > *maxy) *maxy = y1;
+    }
+}
+
+static void emit_shape_path(FILE *fp, const Shape *s,
+                            double tx, double ty, double scale,
+                            const char *fill, const char *stroke,
+                            double stroke_w) {
+    fprintf(fp, "<path d=\"");
+    for (int c = 0; c < s->cycle_count; c++) {
+        const Path *p = &s->cycles[c];
+        if (p->n <= 0) continue;
+        DPoint q0 = vertex_to_xy(s, p->v[0]);
+        fprintf(fp, "M %.3f %.3f ", tx + scale * q0.x, ty - scale * q0.y);
+        for (int i = 1; i < p->n; i++) {
+            DPoint q = vertex_to_xy(s, p->v[i]);
+            fprintf(fp, "L %.3f %.3f ", tx + scale * q.x, ty - scale * q.y);
+        }
+        fprintf(fp, "Z ");
+    }
+    fprintf(fp, "\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%.2f\" fill-rule=\"evenodd\"/>\n",
+            fill, stroke, stroke_w);
+}
+
+static void emit_group_svg(FILE *fp, const GroupShape *g,
+                           double cell_x, double cell_y,
+                           double cell_w, double cell_h,
+                           double scale) {
+    double minx, miny, maxx, maxy;
+    group_bbox(g, &minx, &miny, &maxx, &maxy);
+    double bw = maxx - minx;
+    double bh = maxy - miny;
+    double tx = cell_x + (cell_w - scale * bw) * 0.5 - scale * minx;
+    double ty = cell_y + (cell_h - scale * bh) * 0.5 + scale * maxy;
+    emit_shape_path(fp, g->aggregate, tx, ty, scale, "#dddddd", "black", STROKE_W);
+    for (int i = 0; i < g->tile_count; i++) {
+        emit_shape_path(fp, &g->tiles[i], tx, ty, scale, "none", "#666666", 0.8);
+    }
+}
+
 int main(void) {
+    char first_line[MAX_LINE];
+    const char *first = NULL;
+    while (fgets(first_line, sizeof(first_line), stdin)) {
+        const char *p = first_line;
+        while (isspace((unsigned char)*p)) p++;
+        if (*p) {
+            first = p;
+            break;
+        }
+    }
+    if (!first) {
+        fprintf(stderr, "imgtable: no shapes on stdin\n");
+        return 1;
+    }
+
+    GroupShape *groups = (GroupShape *)calloc(MAX_GROUPS, sizeof(GroupShape));
+    if (!groups) {
+        fprintf(stderr, "imgtable: out of memory\n");
+        return 1;
+    }
+    int group_count = 0;
+    if (heading_index(first) >= 0) {
+        group_count = read_group_shapes(groups, MAX_GROUPS, first);
+    }
+    if (group_count < 0) {
+        fprintf(stderr, "imgtable: failed to parse grouped input\n");
+        free_groups(groups, MAX_GROUPS);
+        free(groups);
+        return 1;
+    }
+    if (group_count > 0) {
+        double gx0, gy0, gx1, gy1;
+        group_bbox(&groups[0], &gx0, &gy0, &gx1, &gy1);
+        double gminx = gx0, gminy = gy0, gmaxx = gx1, gmaxy = gy1;
+        for (int i = 1; i < group_count; i++) {
+            group_bbox(&groups[i], &gx0, &gy0, &gx1, &gy1);
+            if (gx0 < gminx) gminx = gx0;
+            if (gy0 < gminy) gminy = gy0;
+            if (gx1 > gmaxx) gmaxx = gx1;
+            if (gy1 > gmaxy) gmaxy = gy1;
+        }
+        double gw = gmaxx - gminx;
+        double gh = gmaxy - gminy;
+        if (gw < 1e-9) gw = 1.0;
+        if (gh < 1e-9) gh = 1.0;
+        double cell_w = 2.0 * CELL_MARGIN + UNIT * gw;
+        double cell_h = 2.0 * CELL_MARGIN + UNIT * gh;
+        int rows, cols;
+        choose_grid(group_count, cell_w, cell_h, &rows, &cols);
+        double width = cols * cell_w;
+        double height = rows * cell_h;
+        printf("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.0f\" height=\"%.0f\" viewBox=\"0 0 %.0f %.0f\">\n",
+               width, height, width, height);
+        printf("<rect width=\"100%%\" height=\"100%%\" fill=\"white\"/>\n");
+        for (int i = 0; i < group_count; i++) {
+            int row = i / cols;
+            int col = i % cols;
+            emit_group_svg(stdout, &groups[i],
+                           col * cell_w, row * cell_h,
+                           cell_w, cell_h, UNIT);
+        }
+        printf("</svg>\n");
+        free_groups(groups, group_count);
+        free(groups);
+        return 0;
+    }
+    free(groups);
+
     Shape *shapes = (Shape *)calloc(MAX_SHAPES, sizeof(Shape));
     if (!shapes) {
         fprintf(stderr, "imgtable: out of memory\n");
         return 1;
     }
-    int count = read_shapes(shapes, MAX_SHAPES);
-    if (count < 0) {
+    int count = 0;
+    if (!parse_shape_line(first, &shapes[count])) {
         fprintf(stderr, "imgtable: failed to parse input\n");
         free(shapes);
         return 1;
     }
-    if (count == 0) {
-        fprintf(stderr, "imgtable: no shapes on stdin\n");
-        free(shapes);
-        return 1;
+    count++;
+    while (count < MAX_SHAPES && fgets(first_line, sizeof(first_line), stdin)) {
+        const char *p = first_line;
+        while (isspace((unsigned char)*p)) p++;
+        if (!*p) continue;
+        if (!parse_shape_line(p, &shapes[count])) {
+            fprintf(stderr, "imgtable: failed to parse input\n");
+            free(shapes);
+            return 1;
+        }
+        count++;
     }
 
     double global_minx, global_miny, global_maxx, global_maxy;

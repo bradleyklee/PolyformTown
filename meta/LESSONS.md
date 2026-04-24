@@ -16,3 +16,4 @@ L0035 — Vcomp state includes hidden set
 L0037 — Interaction-first lesson style
 L0038 — Tag-lifted translation actions
 L0039 — Tetrille guardrail invariants
+L0040 — Flags can help constrain growth

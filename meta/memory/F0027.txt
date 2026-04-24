@@ -1,0 +1,6 @@
+Detailed print mode for all print tools
+
+Generalize `--detailed` so all `*_print` programs can emit grouped
+aggregate + tile structure in one consistent stream format.
+
+Keep `imgtable` as the shared renderer path for that grouped stream.
