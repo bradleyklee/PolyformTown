@@ -23,8 +23,6 @@ typedef int (*VCompLevelFn)(int level,
                             const Tile *tile,
                             void *userdata);
 
-int vcomp_poly_hash_key(const Poly *p, int lattice, Poly *key);
-
 void run_vcomp_levels(const Tile *tile,
                       int max_n,
                       VCompLevelFn on_level,

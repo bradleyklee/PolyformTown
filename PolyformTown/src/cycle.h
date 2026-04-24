@@ -47,6 +47,7 @@ void poly_transform_lattice(const Poly *src, Poly *dst, int lattice, int t);
 int poly_less(const Poly *a, const Poly *b);
 void poly_canonicalize(const Poly *src, Poly *out);
 void poly_canonicalize_lattice(const Poly *src, Poly *out, int lattice);
+void poly_hash_key_lattice(const Poly *src, int lattice, Poly *key);
 int poly_has_holes(const Poly *p);
 
 #endif

@@ -172,15 +172,6 @@ static int stateset_insert(StateSet *s,
     return 1;
 }
 
-int vcomp_poly_hash_key(const Poly *p, int lattice, Poly *key) {
-    if (lattice == TILE_LATTICE_TETRILLE) {
-        tetrille_poly_canonical_key(p, key);
-        return 1;
-    }
-    poly_canonicalize_lattice(p, key, lattice);
-    return 1;
-}
-
 typedef struct {
     VCompStateVec *levels;
     StateSet *level_sets;
@@ -203,7 +194,7 @@ static void collect_emit(const Poly *p,
     s.hidden_count = hidden_count;
     for (int i = 0; i < hidden_count; i++) s.hidden[i] = hidden[i];
     qsort(s.hidden, s.hidden_count, sizeof(Coord), coord_cmp);
-    vcomp_poly_hash_key(p, ctx->lattice, &key);
+    poly_hash_key_lattice(p, ctx->lattice, &key);
     h = state_hash64(&s, &key);
 
     if (stateset_insert(&ctx->level_sets[hidden_count],
@@ -236,7 +227,7 @@ void run_vcomp_levels(const Tile *tile,
     seed_state.poly.cycle_count = 1;
     seed_state.poly.cycles[0] = tile->base;
     sv_push(&levels[0], &seed_state);
-    vcomp_poly_hash_key(&seed_state.poly, tile->lattice, &seed_key);
+    poly_hash_key_lattice(&seed_state.poly, tile->lattice, &seed_key);
     stateset_insert(&level_sets[0], &levels[0], &seed_state, state_hash64(&seed_state, &seed_key), 0);
     hash_insert(&poly_seen[0], &seed_key);
 
