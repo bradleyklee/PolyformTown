@@ -74,9 +74,6 @@ with outer oriented CCW and holes CW, sorted lexicographically. Hashing is
 performed on this canonical form so that symmetry-equivalent shapes map to
 a single representative and are counted once.
 
-Tetrille geometries prefer anchoring on D6 vertices, and only fall back
-to general canonicalization when this is not possible (polyhexes).
-
 ## Build
 
 ```bash

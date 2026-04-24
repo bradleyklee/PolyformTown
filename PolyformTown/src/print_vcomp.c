@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "cycle.h"
 #include "hash.h"
 #include "vcomp_pipeline.h"
 
@@ -21,7 +22,7 @@ static int on_level(int level,
     hash_init(&printed, 1024);
     for (size_t i = 0; i < states->count; i++) {
         Poly key;
-        vcomp_poly_hash_key(&states->data[i].poly, tile->lattice, &key);
+        poly_hash_key_lattice(&states->data[i].poly, tile->lattice, &key);
         if (hash_insert(&printed, &key)) {
             tile_print_imgtable_shape(tile, &states->data[i].poly);
         }

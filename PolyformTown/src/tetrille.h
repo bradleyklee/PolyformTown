@@ -14,6 +14,5 @@ void tetrille_translate_cycle(Cycle *c, int m6, int n6);
 int tetrille_coords_adjacent(Coord a, Coord b);
 void tetrille_embed_point_scaled(Coord p, long long *x, long long *y);
 int tetrille_point_on_segment(Coord p, Coord a, Coord b);
-void tetrille_poly_canonical_key(const Poly *in, Poly *out);
 
 #endif

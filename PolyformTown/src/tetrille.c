@@ -168,19 +168,3 @@ int tetrille_point_on_segment(Coord p, Coord a, Coord b) {
     if (py < (ay < by ? ay : by) || py > (ay > by ? ay : by)) return 0;
     return 1;
 }
-
-void tetrille_poly_canonical_key(const Poly *in, Poly *out) {
-    Poly tmp;
-    tmp.cycle_count = in->cycle_count;
-    for (int i = 0; i < in->cycle_count; i++) {
-        tmp.cycles[i].n = in->cycles[i].n;
-        for (int j = 0; j < in->cycles[i].n; j++) {
-            long long x, y;
-            tetrille_embed_point_scaled(in->cycles[i].v[j], &x, &y);
-            tmp.cycles[i].v[j].v = 6;
-            tmp.cycles[i].v[j].x = (int)x;
-            tmp.cycles[i].v[j].y = (int)y;
-        }
-    }
-    poly_canonicalize_lattice(&tmp, out, TILE_LATTICE_TRIANGULAR);
-}

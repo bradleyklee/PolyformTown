@@ -11,7 +11,7 @@ void run_poly_levels(const Tile *tile,
     Poly seed_raw, seed;
     seed_raw.cycle_count = 1;
     seed_raw.cycles[0] = tile->base;
-    poly_canonicalize_lattice(&seed_raw, &seed, tile->lattice);
+    poly_hash_key_lattice(&seed_raw, tile->lattice, &seed);
 
     PolyVec cur, next;
     vec_init(&cur, 64);
@@ -42,9 +42,9 @@ void run_poly_levels(const Tile *tile,
                                                   &grown)) {
                             continue;
                         }
-                        poly_canonicalize_lattice(&grown,
-                                                  &canon,
-                                                  tile->lattice);
+                        poly_hash_key_lattice(&grown,
+                                              tile->lattice,
+                                              &canon);
                         if (hash_insert(&seen, &canon)) vec_push(&next, &canon);
                     }
                 }

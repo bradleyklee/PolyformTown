@@ -209,46 +209,6 @@ static void cycle_rotate_to_start(const Cycle *src, Cycle *dst, int start) {
     for (int i = 0; i < src->n; i++) dst->v[i] = src->v[(start + i) % src->n];
 }
 
-static int cycle_find_outer_index(const Poly *p, int lattice) {
-    int outer = 0;
-    for (int i = 1; i < p->cycle_count; i++) {
-        if (cycle_abs_area_cmp_desc(&p->cycles[i], &p->cycles[outer], lattice)) outer = i;
-    }
-    return outer;
-}
-
-static void poly_translate_tetrille(Poly *p, int m6, int n6) {
-    for (int i = 0; i < p->cycle_count; i++) cycle_translate_tetrille(&p->cycles[i], m6, n6);
-}
-
-static void poly_prepare_cycles_rooted(Poly *p, int outer_index) {
-    if (outer_index != 0) {
-        Cycle tmp = p->cycles[0];
-        p->cycles[0] = p->cycles[outer_index];
-        p->cycles[outer_index] = tmp;
-    }
-
-    for (int i = 0; i < p->cycle_count; i++) {
-        long long area = cycle_signed_area2(&p->cycles[i], TILE_LATTICE_TETRILLE);
-        if (i == 0) {
-            if (area < 0) cycle_reverse(&p->cycles[i]);
-        } else {
-            if (area > 0) cycle_reverse(&p->cycles[i]);
-            cycle_canonicalize_shift(&p->cycles[i]);
-        }
-    }
-
-    for (int i = 1; i < p->cycle_count; i++) {
-        for (int j = i + 1; j < p->cycle_count; j++) {
-            if (cycle_less(&p->cycles[j], &p->cycles[i])) {
-                Cycle tmp = p->cycles[i];
-                p->cycles[i] = p->cycles[j];
-                p->cycles[j] = tmp;
-            }
-        }
-    }
-}
-
 void cycle_canonicalize_lattice(const Cycle *src, Cycle *out, int lattice) {
     if (lattice != TILE_LATTICE_TETRILLE) {
         Cycle best = {0}, cur;
@@ -399,6 +359,21 @@ void poly_canonicalize(const Poly *src, Poly *out) {
     poly_canonicalize_lattice(src, out, TILE_LATTICE_SQUARE);
 }
 
+static void poly_canonicalize_tetrille(const Poly *src, Poly *out) {
+    Poly best = {0}, cur;
+    int first = 1;
+    for (int t = 0; t < 12; t++) {
+        poly_transform_lattice(src, &cur, TILE_LATTICE_TETRILLE, t);
+        poly_normalize_position(&cur, TILE_LATTICE_TETRILLE);
+        poly_prepare_cycles(&cur, TILE_LATTICE_TETRILLE);
+        if (first || poly_less(&cur, &best)) {
+            best = cur;
+            first = 0;
+        }
+    }
+    *out = best;
+}
+
 void poly_canonicalize_lattice(const Poly *src, Poly *out, int lattice) {
     if (lattice != TILE_LATTICE_TETRILLE) {
         Poly best = {0}, cur;
@@ -417,43 +392,9 @@ void poly_canonicalize_lattice(const Poly *src, Poly *out, int lattice) {
         return;
     }
 
-    int outer = cycle_find_outer_index(src, lattice);
-    const Cycle *outer_cycle = &src->cycles[outer];
-    Poly best = {0}, rooted, cur;
-    int first = 1;
+    poly_canonicalize_tetrille(src, out);
+}
 
-    for (int root = 0; root < outer_cycle->n; root++) {
-        if (outer_cycle->v[root].v != 6) continue;
-
-        rooted = *src;
-        cycle_rotate_to_start(&src->cycles[outer], &rooted.cycles[outer], root);
-        poly_translate_tetrille(&rooted, -rooted.cycles[outer].v[0].x, -rooted.cycles[outer].v[0].y);
-
-        for (int t = 0; t < 12; t++) {
-            int cur_outer;
-            poly_transform_lattice(&rooted, &cur, lattice, t);
-            cur_outer = cycle_find_outer_index(&cur, lattice);
-            poly_prepare_cycles_rooted(&cur, cur_outer);
-            if (first || poly_less(&cur, &best)) {
-                best = cur;
-                first = 0;
-            }
-        }
-    }
-
-    if (first) {
-        Poly fallback = {0}, cur2;
-        int first2 = 1;
-        for (int t = 0; t < 12; t++) {
-            poly_transform_lattice(src, &cur2, lattice, t);
-            poly_normalize_position(&cur2, lattice);
-            poly_prepare_cycles(&cur2, lattice);
-            if (first2 || poly_less(&cur2, &fallback)) {
-                fallback = cur2;
-                first2 = 0;
-            }
-        }
-        best = fallback;
-    }
-    *out = best;
+void poly_hash_key_lattice(const Poly *src, int lattice, Poly *key) {
+    poly_canonicalize_lattice(src, key, lattice);
 }
