@@ -1,0 +1,15 @@
+Tag-lifted translation actions
+
+Translation by (m6, n6):
+
+v=6:
+  (x, y) -> (x + m6, y + n6)
+
+v=4:
+  (x, y) -> (x + 2*m6, y + 2*n6)
+
+v=3:
+  (x, y) -> (x + 2*m6 + n6, y - m6 + n6)
+
+Edge directions (all systems):
+  (1,0), (0,1), (-1,1), (-1,0), (0,-1), (1,-1)

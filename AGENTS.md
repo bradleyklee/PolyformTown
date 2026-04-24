@@ -5,8 +5,9 @@ Scope: this file applies to the entire repository tree rooted at
 
 ## Purpose
 This is the top-level Codex harness for reliable work on
-PolyformTown. It complements (not replaces) `RESET.txt`,
-`SUSPEND.md`, `LESSONS.md`, `FUTURES.md`, and `README.md`.
+PolyformTown. It complements (not replaces) `meta/RESET.md`,
+`meta/SUSPEND.md`, `meta/LESSONS.md`, `meta/FUTURES.md`,
+and `PolyformTown/README.md`.
 
 Use this file to keep future edits consistent, testable, and easy
 to review.
@@ -22,11 +23,11 @@ to review.
 1. Read `AGENTS.md` (this file) fully.
 2. Enter project dir: `cd PolyformTown`.
 3. Read, in order:
-   - `RESET.txt`
-   - `PERSONAE.md`
-   - `LESSONS.md`
-   - `FUTURES.md`
-   - `README.md`
+   - `meta/RESET.md`
+   - `meta/PERSONAE.md`
+   - `meta/LESSONS.md`
+   - `meta/FUTURES.md`
+   - `PolyformTown/README.md`
 4. Inspect current tree quickly (`rg --files`, targeted reads).
 5. Validate baseline when task risk is medium/high:
    - `make clean && make`

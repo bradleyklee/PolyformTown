@@ -1,0 +1,23 @@
+Tetrille integer conversion formulas
+
+Forward embeddings:
+
+6 -> 4:
+  (x4, y4) = (2*x6, 2*y6)
+
+6 -> 3:
+  (x3, y3) = (2*x6 + y6, -x6 + y6)
+
+Inverse conversions:
+
+v=6:
+  x6 = dx
+  y6 = dy
+
+v=4:
+  x6 = dx/2
+  y6 = dy/2
+
+v=3:
+  x6 = (dx - dy)/3
+  y6 = (dx + 2*dy)/3

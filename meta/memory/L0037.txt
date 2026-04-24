@@ -1,0 +1,8 @@
+Interaction-first lesson style
+
+Lessons should center the durable insight supplied through chat
+interaction. They may also include derivations or refinements produced
+by the assistant in response to that input.
+
+Lessons can be learned from conversation, code inspection, or external
+references. Keep the title short and keep the body detailed.

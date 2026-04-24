@@ -1,0 +1,10 @@
+Tetrille guardrail invariants
+
+Do not mix coordinate systems directly.
+All whole-poly translations must pass through v=6.
+
+Debug checks:
+- v=4 coordinates should be even
+- v=3 should satisfy (x - y) % 3 == 0
+
+Violation of these checks suggests coordinate corruption.

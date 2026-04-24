@@ -1,1 +1,0 @@
-For tetrille canonicalization, candidate generation must be driven by outer-boundary anchor choices and D6 symmetry, while reflections reverse cycle winding to preserve outer=CCW and holes=CW.
