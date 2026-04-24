@@ -21,18 +21,17 @@ to review.
 
 ## STARTUP pipeline (run at the start of each task)
 1. Read `AGENTS.md` (this file) fully.
-2. Enter project dir: `cd PolyformTown`.
-3. Read, in order:
+2. Read, in order:
    - `meta/RESET.md`
    - `meta/PERSONAE.md`
    - `meta/LESSONS.md`
-   - `meta/FUTURES.md`
    - `PolyformTown/README.md`
-4. Inspect current tree quickly (`rg --files`, targeted reads).
-5. Validate baseline when task risk is medium/high:
+3. Inspect current tree quickly (`rg --files`, targeted reads).
+4. Validate baseline when task risk is medium/high:
    - `make clean && make`
    - `bash tests/smoke.sh`
-6. Restate task in implementation terms before editing.
+   - `bash tests/comprehensive.sh`
+5. Restate task in implementation terms before editing.
 
 ## File-format and writing rules
 - Use fixed-column-friendly prose (target <= 72 chars/line).
