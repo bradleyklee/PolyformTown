@@ -1,0 +1,7 @@
+Flags can help constrain growth
+
+If we need to eliminate holes, or push growth into a limited mode,
+we should not key off lattice parameters.
+
+Instead, impose extra constraints on candidate solutions.
+That invalidates growth directions that do not add value.

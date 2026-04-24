@@ -117,6 +117,40 @@ Print the canonical vertex-completion representatives at level `N`.
 ./vcomp_print N [tilefile]
 ```
 
+### hatseq_count
+
+Run hat-sequence completion counts at levels `1..N`.
+
+Selectors are optional valence tokens (`3`, `4`, `6`) after tilefile.
+Defaults are `3 4 6`.
+
+`--live-boundary` keeps no-hole/live-boundary states only.
+`--strict-three` enables strict three-around-target completion mode.
+
+```bash
+./hatseq_count N [tilefile] [3] [4] [6] \
+  [--live-boundary] [--strict-three]
+```
+
+### hatseq_print
+
+Print canonical hatseq representatives at level `N`.
+
+Use `--detailed` to include per-aggregate tile overlays for depiction.
+Pipe output to `imgtable` to render SVG.
+
+Strict-three 3/6 depiction at `N=1`:
+
+```bash
+./hatseq_print 1 tiles/hat.tile 3 6 \
+  --strict-three --detailed | ./imgtable > out.svg
+```
+
+```bash
+./hatseq_print N [tilefile] [3] [4] [6] \
+  [--live-boundary] [--strict-three] [--detailed]
+```
+
 ## QC / smoke test
 
 Run the project smoke test with:
@@ -156,6 +190,9 @@ Run with defaults (monomino, built-in `N`):
 ```bash
 ./poly_count 8 tiles/kite.tile
 ./vcomp_count 3 tiles/hat.tile
+./hatseq_count 3 tiles/hat.tile --live-boundary
+./hatseq_count 3 tiles/hat.tile 3 6 --live-boundary --strict-three
+./hatseq_print 1 tiles/hat.tile 3 6 --detailed
 ```
 
 ## Expected hole counts from print
