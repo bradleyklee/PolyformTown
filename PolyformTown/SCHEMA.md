@@ -34,35 +34,35 @@ supports square, triangular, and tetrille-style tagged lattices.
   canonical boundary rows (`poly_print` / `vcomp_print`).
 
 ## Project process/state files (for contributors)
-- `RESET.txt` is a restart checklist for an agent/session. It
-  points to `PERSONAE.md`, `LESSONS.md`, `FUTURES.md`,
-  `README.md`, and source before asking for next steps.
-- `SUSPEND.md` is an end-of-pass quality gate. It asks for one
-  more refinement pass, consistency checks, and updates to memory
-  index files when appropriate.
-- `LESSONS.md` and `FUTURES.md` are indexes into `memory/`:
-  - `LESSONS.md` points to prioritized operational and technical
-    lessons (`memory/Lxxxx.txt`).
-  - `FUTURES.md` tracks active and completed roadmap items
-    (`memory/Fxxxx.txt`).
+- `AGENTS.md` is the runtime entry point for task policy in this
+  repo scope.
+- `meta/RESET.md` is a restart checklist for an agent/session.
+- `meta/SUSPEND.md` is an end-of-pass quality gate.
+- `meta/PERSONAE.md` defines contributor persona/roles.
+- `meta/LESSONS.md` and `meta/FUTURES.md` are indexes into
+  `meta/memory/`:
+  - `meta/LESSONS.md` points to operational/technical lessons
+    (`meta/memory/Lxxxx.txt`).
+  - `meta/FUTURES.md` tracks roadmap items
+    (`meta/memory/Fxxxx.txt`).
+- `meta/history/` stores prior planning artifacts.
 - These files are workflow scaffolding for maintainers/agents,
   not runtime requirements for building or running enumerators.
 
 ### AGENTS.md vs memory files (Codex workflow)
-- If an `AGENTS.md` file is present, it should be treated as the
-  authoritative task-policy layer for files in its scope (how to
-  edit, test, format, and deliver changes).
-- The `memory/` structure (`LESSONS.md`, `FUTURES.md`, and
-  `memory/Lxxxx.txt` + `memory/Fxxxx.txt`) is project continuity:
-  design lessons, historical constraints, and roadmap direction.
+- `AGENTS.md` is the authoritative task-policy layer for files in
+  its scope (how to edit, test, format, and deliver changes).
+- The `meta/memory/` structure preserves project continuity:
+  lessons, constraints, and roadmap direction across sessions.
 - In practice they are complementary: AGENTS gives immediate
-  operating rules; memory preserves longer-term project context.
+  operating rules; memory preserves longer-term context.
 
 ## Suggested learning path
 1. Read `README.md` for the algorithm overview and expected
    sequence values.
-2. Skim `RESET.txt`, `SUSPEND.md`, `LESSONS.md`, and
-   `FUTURES.md` to understand team process around changes.
+2. Skim `meta/RESET.md`, `meta/SUSPEND.md`,
+   `meta/LESSONS.md`, and `meta/FUTURES.md` to understand
+   team process around changes.
 3. Trace one `poly_count` level in `src/count_poly.c`.
 4. Step through `try_attach_tile_poly` in `src/attach.c`.
 5. Read `poly_canonicalize_lattice` in `src/cycle.c` to learn

@@ -1,6 +1,6 @@
-This file is an index into memory/ lessons.
+This file is an index into `meta/memory/` lessons.
 
-Entries are atomic. Each lesson is stored in memory/Lxxxx.txt.
+Entries are atomic. Each lesson is stored in `meta/memory/Lxxxx.txt`.
 Reordering this file does not change lesson numbering.
 
 Complete items are not deleted from memory.

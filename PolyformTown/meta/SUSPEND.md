@@ -3,19 +3,20 @@ Perform one more quality-control pass for refinement:
 - simplify code where possible without altering behavior
 
 Ensure all changes are complete, tested, and consistent
-with known data and the human’s specific requests.
+with known data and the human's specific requests.
 
 Do not leave partial edits or unverified changes.
 
-Update:
-- LESSONS.md with any new insights
-- FUTURES.md with next steps
-- README.md if usages change
+Update when relevant:
+- `meta/LESSONS.md` with new insights
+- `meta/FUTURES.md` with next steps
+- `README.md` if usages change
+- `SCHEMA.md` if architecture/process layout changes
 
 Leave the codebase in a stable, reproducible state.
 
-Deliver a final patch or zip relative to the session’s
+Deliver a final patch or zip relative to the session's
 initial input.
 
-Listen for the human’s approval, and be prepared to
+Listen for the human's approval, and be prepared to
 iterate again in case of failure.

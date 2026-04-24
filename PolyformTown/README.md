@@ -270,6 +270,20 @@ n:     1  2  3   4    5      6
 count  1  9  94  1552 27285 509805
 ```
 
+
+## Contributor metadata layout
+
+Agent/process metadata now lives under `meta/` to keep runtime
+workflow files separate from user-facing docs and source:
+
+- `meta/RESET.md`, `meta/SUSPEND.md`, `meta/PERSONAE.md`
+- `meta/LESSONS.md`, `meta/FUTURES.md`
+- `meta/memory/` (indexed lesson/future records)
+- `meta/history/` (planning artifacts)
+
+`AGENTS.md` at repo root is the policy entry point for runtime
+initialization and task execution.
+
 ## Scope
 
 The system now accepts square-lattice and triangular-lattice tiles in the
