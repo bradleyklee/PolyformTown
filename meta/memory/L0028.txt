@@ -1,0 +1,5 @@
+If tetrille output lacks visible v=6 vertices, do not treat that alone
+as a canonicalization failure.
+
+Use tag-conversion and translation invariants to diagnose the issue
+before changing canonical rules.

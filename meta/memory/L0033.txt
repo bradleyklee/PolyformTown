@@ -1,0 +1,15 @@
+Direct cross-valence maps
+
+Direct forms used in mixed-tag reasoning:
+
+6 -> 4:
+  x4 = 2*x6
+  y4 = 2*y6
+
+4 -> 3:
+  x3 = x4 + y4/2
+  y3 = (-x4 + y4)/2
+
+3 -> 6:
+  x6 = (x3 - y3)/3
+  y6 = (x3 + 2*y3)/3

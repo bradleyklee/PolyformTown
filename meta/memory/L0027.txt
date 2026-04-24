@@ -1,0 +1,5 @@
+Tetrille canonicalization should follow the same transform/normalize/
+compare loop used elsewhere, with lattice-specific transforms and
+winding preservation (outer=CCW, holes=CW).
+
+Avoid reintroducing special outer-boundary anchor generation rules.

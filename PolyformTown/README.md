@@ -4,8 +4,8 @@
 
 Enumerate lattice polyforms and compare the resulting counts against
 reference sequences. The current engine supports square-lattice,
-triangular-lattice, and tetrille-oriented tile workflows through the same
-edge-cycle framework.
+triangular-lattice, and tetrille-oriented tile workflows through
+the same edge-cycle framework.
 
 ## Schema
 
@@ -34,12 +34,12 @@ remains exact and no floating point is used internally.
 ## Tetrille?
 
 The tetrille tiles use tagged vertex systems rather than a single raw
-coordinate plane. Vertices carry a type tag `v in {6,4,3}` and coordinates
-are interpreted relative to that tag. Valid whole-poly translations are
-integer translations in the 6-system, lifted to the other systems by fixed
-integer formulas. Direct conversions between valence systems are valid
-when performed using the correct integer formulas. Do not mix raw
-coordinate differences across tags!
+coordinate plane. Vertices carry a type tag `v in {6,4,3}` and
+coordinates are interpreted relative to that tag. Valid whole-poly
+translations are integer translations in the 6-system, lifted to other
+systems by fixed integer formulas. Direct conversions between valence
+systems are valid when performed with the correct integer formulas.
+Do not mix raw coordinate differences across tags.
 
 ## A Typical Procedure
 
@@ -69,10 +69,12 @@ coordinate differences across tags!
 ## Canonicalization
 
 All cycles are transformed together. The outer cycle is the one with
-maximum absolute signed area. Canonical form is `[outer] + sorted(holes)`,
-with outer oriented CCW and holes CW, sorted lexicographically. Hashing is
-performed on this canonical form so that symmetry-equivalent shapes map to
-a single representative and are counted once.
+maximum absolute signed area. Canonical form is
+`[outer] + sorted(holes)`, with outer oriented CCW and holes CW,
+sorted lexicographically. Hashing is performed on this canonical form
+so symmetry-equivalent shapes map to one representative and are
+counted once. This includes tetrille flows; there is no separate
+boundary-anchor canonical rule.
 
 ## Build
 
@@ -270,24 +272,28 @@ count  1  9  94  1552 27285 509805
 
 ## Contributor metadata layout
 
-Agent/process metadata now lives under `meta/` to keep runtime
-workflow files separate from user-facing docs and source:
+Agent/process metadata now lives at repo root under `../meta/` to
+keep runtime workflow files separate from user-facing docs and source:
 
-- `meta/RESET.md`, `meta/SUSPEND.md`, `meta/PERSONAE.md`
-- `meta/LESSONS.md`, `meta/FUTURES.md`
-- `meta/memory/` (indexed lesson/future records)
-- `meta/history/` (planning artifacts)
+- `../meta/RESET.md`, `../meta/SUSPEND.md`, `../meta/PERSONAE.md`
+- `../meta/LESSONS.md`, `../meta/FUTURES.md`
+- `../meta/memory/` (indexed lesson/future records)
+- `../meta/history/` (planning artifacts)
 
-`AGENTS.md` at repo root is the policy entry point for runtime
-initialization and task execution.
+`../AGENTS.md` is the policy entry point for runtime initialization
+and task execution.
+
+`../meta/LESSONS.md` is interaction-first. Keep titles short in the
+index and place detailed prompt context in
+`../meta/memory/Lxxxx.txt`.
 
 ## Scope
 
-The system now accepts square-lattice and triangular-lattice tiles in the
-same edge-cycle framework, and has working tetrille-oriented tooling and
-small-count regression coverage for the kite workflow. Enumeration remains
-tractable only for small primitives, but the architecture is no longer
-limited to square geometry.
+The system now accepts square-lattice and triangular-lattice tiles
+in the same edge-cycle framework, and has working tetrille-oriented
+tooling and small-count regression coverage for the kite workflow.
+Enumeration remains tractable only for small primitives, but the
+architecture is no longer limited to square geometry.
 
 ## Status
 

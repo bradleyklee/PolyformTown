@@ -34,34 +34,33 @@ supports square, triangular, and tetrille-style tagged lattices.
   canonical boundary rows (`poly_print` / `vcomp_print`).
 
 ## Project process/state files (for contributors)
-- `AGENTS.md` is the runtime entry point for task policy in this
+- `../AGENTS.md` is the runtime entry point for task policy in this
   repo scope.
-- `meta/RESET.md` is a restart checklist for an agent/session.
-- `meta/SUSPEND.md` is an end-of-pass quality gate.
-- `meta/PERSONAE.md` defines contributor persona/roles.
-- `meta/LESSONS.md` and `meta/FUTURES.md` are indexes into
-  `meta/memory/`:
-  - `meta/LESSONS.md` points to operational/technical lessons
-    (`meta/memory/Lxxxx.txt`).
-  - `meta/FUTURES.md` tracks roadmap items
-    (`meta/memory/Fxxxx.txt`).
-- `meta/history/` stores prior planning artifacts.
+- Runtime metadata now lives one level above this directory:
+  - `../meta/RESET.md` is a restart checklist.
+  - `../meta/SUSPEND.md` is an end-of-pass quality gate.
+  - `../meta/PERSONAE.md` defines contributor persona/roles.
+  - `../meta/LESSONS.md` and `../meta/FUTURES.md` index
+    `../meta/memory/` records.
+  - `../meta/history/` stores prior planning artifacts.
 - These files are workflow scaffolding for maintainers/agents,
   not runtime requirements for building or running enumerators.
 
 ### AGENTS.md vs memory files (Codex workflow)
-- `AGENTS.md` is the authoritative task-policy layer for files in
+- `../AGENTS.md` is the authoritative task-policy layer for files in
   its scope (how to edit, test, format, and deliver changes).
-- The `meta/memory/` structure preserves project continuity:
+- The `../meta/memory/` structure preserves project continuity:
   lessons, constraints, and roadmap direction across sessions.
 - In practice they are complementary: AGENTS gives immediate
   operating rules; memory preserves longer-term context.
+- `../meta/LESSONS.md` is interaction-first and captures durable
+  prompt context needed for future work.
 
 ## Suggested learning path
 1. Read `README.md` for the algorithm overview and expected
    sequence values.
-2. Skim `meta/RESET.md`, `meta/SUSPEND.md`,
-   `meta/LESSONS.md`, and `meta/FUTURES.md` to understand
+2. Skim `../meta/RESET.md`, `../meta/SUSPEND.md`,
+   `../meta/LESSONS.md`, and `../meta/FUTURES.md` to understand
    team process around changes.
 3. Trace one `poly_count` level in `src/count_poly.c`.
 4. Step through `try_attach_tile_poly` in `src/attach.c`.
