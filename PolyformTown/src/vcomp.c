@@ -26,36 +26,6 @@ static int coord_in_list(const Coord *verts, int count, Coord v) {
     return 0;
 }
 
-static int cycle_eq_local(const Cycle *a, const Cycle *b) {
-    if (a->n != b->n) return 0;
-    for (int i = 0; i < a->n; i++) {
-        if (!coord_eq(a->v[i], b->v[i])) return 0;
-    }
-    return 1;
-}
-
-static int build_rotation_variants(const Tile *tile, Cycle *out) {
-    int out_count = 0;
-    int rot_count = lattice_transform_count(tile->lattice);
-    if (rot_count > 1) rot_count /= 2;
-    for (int t = 0; t < rot_count; t++) {
-        Cycle cur;
-        int dup = 0;
-        cycle_transform_lattice(&tile->base, &cur, tile->lattice, t);
-        if (cycle_signed_area2(&cur, tile->lattice) < 0) cycle_reverse(&cur);
-        cycle_normalize_position(&cur, tile->lattice);
-        cycle_canonicalize_shift(&cur);
-        for (int i = 0; i < out_count; i++) {
-            if (cycle_eq_local(&out[i], &cur)) {
-                dup = 1;
-                break;
-            }
-        }
-        if (!dup && out_count < MAX_VARIANTS) out[out_count++] = cur;
-    }
-    return out_count;
-}
-
 static int point_on_segment(Coord p, Coord a, Coord b, int lattice) {
     if (lattice == TILE_LATTICE_TETRILLE) {
         return tetrille_point_on_segment(p, a, b);
@@ -104,6 +74,17 @@ int build_boundary_vertices(const Poly *p, Coord *verts) {
         }
     }
     return count;
+}
+
+int poly_has_live_boundary(const Poly *p, const Tile *tile) {
+    Coord verts[2 * MAX_BOUNDARY_VERTS];
+    int vc = build_frontier_vertices(p, verts);
+    for (int i = 0; i < vc; i++) {
+        if (!has_vertex_completion_steps(p, tile, verts[i], NULL, 0, -1)) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 static int hidden_connected_lattice(const Coord *hidden, int hidden_count, int lattice) {
@@ -196,10 +177,10 @@ static void dfs_vertex_completions(const Poly *p,
                                 ctx->emit(&grown, next_hidden, next_hidden_count,
                                           ctx->userdata);
                             }
-                        }
-                        if (ctx->stop_after_first) {
-                            *ctx->stop_flag = 1;
-                            return;
+                            if (ctx->stop_after_first) {
+                                *ctx->stop_flag = 1;
+                                return;
+                            }
                         }
                     }
                     continue;
@@ -218,7 +199,7 @@ static void dfs_vertex_completions(const Poly *p,
                                            next_hidden, next_hidden_count,
                                            grown_boundary, grown_boundary_count,
                                            completion_steps + 1,
-                                           NULL, 0);
+                                           trace_tiles, trace_tile_count);
                 }
             }
         }
@@ -230,7 +211,6 @@ void enumerate_vertex_completions_steps(const Poly *base,
                                         Coord target,
                                         const Coord *initial_hidden,
                                         int initial_hidden_count,
-                                        int rotations_only,
                                         int required_steps,
                                         VCompEmitFn emit,
                                         void *userdata) {
@@ -247,13 +227,9 @@ void enumerate_vertex_completions_steps(const Poly *base,
     ctx.stop_flag = &stop;
     ctx.emit = emit;
     ctx.userdata = userdata;
-    if (rotations_only) {
-        ctx.variant_count = build_rotation_variants(tile, ctx.variants);
-    } else {
-        ctx.variant_count = tile->variant_count;
-        for (int i = 0; i < tile->variant_count; i++) {
-            ctx.variants[i] = tile->variants[i];
-        }
+    ctx.variant_count = tile->variant_count;
+    for (int i = 0; i < tile->variant_count; i++) {
+        ctx.variants[i] = tile->variants[i];
     }
     int initial_boundary_count = build_boundary_vertices(base, initial_boundary);
     dfs_vertex_completions(base, &ctx, initial_hidden, initial_hidden_count,
@@ -266,7 +242,6 @@ void enumerate_vertex_completions_steps_trace(const Poly *base,
                                               Coord target,
                                               const Coord *initial_hidden,
                                               int initial_hidden_count,
-                                              int rotations_only,
                                               int required_steps,
                                               VCompTraceEmitFn emit,
                                               void *userdata) {
@@ -283,13 +258,9 @@ void enumerate_vertex_completions_steps_trace(const Poly *base,
     ctx.stop_flag = &stop;
     ctx.trace_emit = emit;
     ctx.userdata = userdata;
-    if (rotations_only) {
-        ctx.variant_count = build_rotation_variants(tile, ctx.variants);
-    } else {
-        ctx.variant_count = tile->variant_count;
-        for (int i = 0; i < tile->variant_count; i++) {
-            ctx.variants[i] = tile->variants[i];
-        }
+    ctx.variant_count = tile->variant_count;
+    for (int i = 0; i < tile->variant_count; i++) {
+        ctx.variants[i] = tile->variants[i];
     }
     int initial_boundary_count = build_boundary_vertices(base, initial_boundary);
     dfs_vertex_completions(base, &ctx, initial_hidden, initial_hidden_count,
@@ -302,12 +273,11 @@ void enumerate_vertex_completions_mode(const Poly *base,
                                        Coord target,
                                        const Coord *initial_hidden,
                                        int initial_hidden_count,
-                                       int rotations_only,
                                        VCompEmitFn emit,
                                        void *userdata) {
     enumerate_vertex_completions_steps(base, tile, target,
                                        initial_hidden, initial_hidden_count,
-                                       rotations_only, -1, emit, userdata);
+                                       -1, emit, userdata);
 }
 
 typedef struct {
@@ -330,10 +300,10 @@ int has_vertex_completion_steps(const Poly *base,
                                 Coord target,
                                 const Coord *initial_hidden,
                                 int initial_hidden_count,
-                                int rotations_only,
                                 int required_steps) {
     VCompCtx ctx;
     Coord initial_boundary[MAX_BOUNDARY_VERTS];
+    Cycle trace_tiles[MAX_VERTS];
     ProbeCtx probe;
     memset(&ctx, 0, sizeof(ctx));
     memset(&probe, 0, sizeof(probe));
@@ -345,18 +315,14 @@ int has_vertex_completion_steps(const Poly *base,
     ctx.stop_flag = &probe.found;
     ctx.emit = probe_emit;
     ctx.userdata = &probe;
-    if (rotations_only) {
-        ctx.variant_count = build_rotation_variants(tile, ctx.variants);
-    } else {
-        ctx.variant_count = tile->variant_count;
-        for (int i = 0; i < tile->variant_count; i++) {
-            ctx.variants[i] = tile->variants[i];
-        }
+    ctx.variant_count = tile->variant_count;
+    for (int i = 0; i < tile->variant_count; i++) {
+        ctx.variants[i] = tile->variants[i];
     }
     int initial_boundary_count = build_boundary_vertices(base, initial_boundary);
     dfs_vertex_completions(base, &ctx, initial_hidden, initial_hidden_count,
                            initial_boundary, initial_boundary_count, 0,
-                           NULL, 0);
+                           trace_tiles, 0);
     return probe.found;
 }
 
@@ -364,11 +330,10 @@ int has_vertex_completion(const Poly *base,
                           const Tile *tile,
                           Coord target,
                           const Coord *initial_hidden,
-                          int initial_hidden_count,
-                          int rotations_only) {
+                          int initial_hidden_count) {
     return has_vertex_completion_steps(base, tile, target,
                                        initial_hidden, initial_hidden_count,
-                                       rotations_only, -1);
+                                       -1);
 }
 
 void enumerate_vertex_completions(const Poly *base,
@@ -380,5 +345,5 @@ void enumerate_vertex_completions(const Poly *base,
                                   void *userdata) {
     enumerate_vertex_completions_mode(base, tile, target,
                                       initial_hidden, initial_hidden_count,
-                                      0, emit, userdata);
+                                      emit, userdata);
 }

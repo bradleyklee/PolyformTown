@@ -230,8 +230,10 @@ static void collect_emit_trace(const Poly *p,
     }
     if (level > ctx->max_level) return;
 
-    if (ctx->double_check_mode && s.poly.cycle_count > 1) {
-        return;
+    if (ctx->double_check_mode) {
+        if (!poly_has_live_boundary(&s.poly, ctx->tile)) {
+            return;
+        }
     }
 
     poly_hash_key_lattice(p, ctx->tile->lattice, &key);
@@ -311,7 +313,6 @@ void run_hatseq_levels(const Tile *tile,
                     verts[j],
                     levels[level].data[i].hidden,
                     levels[level].data[i].hidden_count,
-                    0,
                     /* strict-three only constrains the active growth target */
                     strict_three_mode ? 2 : -1,
                     collect_emit_trace,
