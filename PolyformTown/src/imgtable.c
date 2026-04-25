@@ -6,7 +6,6 @@
 
 #define MAX_LINE 65536
 #define MAX_SHAPES 512
-#define MAX_GROUPS 256
 #define MAX_CONSTS 32
 #define MAX_NAME 32
 #define MAX_EXPR 128
@@ -434,12 +433,27 @@ static int group_add_tile(GroupShape *g, const Shape *s) {
     return 1;
 }
 
-static int read_group_shapes(GroupShape *groups, int max_groups,
+static int ensure_group_capacity(GroupShape **groups_io, int *cap_io, int need) {
+    if (need <= *cap_io) return 1;
+    int next = (*cap_io == 0) ? 64 : (*cap_io * 2);
+    while (next < need) next *= 2;
+    GroupShape *next_groups =
+        (GroupShape *)realloc(*groups_io, (size_t)next * sizeof(GroupShape));
+    if (!next_groups) return 0;
+    memset(next_groups + *cap_io, 0,
+           (size_t)(next - *cap_io) * sizeof(GroupShape));
+    *groups_io = next_groups;
+    *cap_io = next;
+    return 1;
+}
+
+static int read_group_shapes(GroupShape **groups_io, int *group_cap_io,
                              const char *first_line) {
     char line[MAX_LINE];
     int count = 0;
     int section = 0; /* 1 aggregate, 2 tiles */
     int cur = -1;
+    GroupShape *groups = *groups_io;
     const char *pending = first_line;
     for (;;) {
         const char *p;
@@ -453,7 +467,10 @@ static int read_group_shapes(GroupShape *groups, int max_groups,
         while (isspace((unsigned char)*p)) p++;
         if (!*p) continue;
         if (heading_index(p) >= 0) {
-            if (count >= max_groups) return -1;
+            if (!ensure_group_capacity(groups_io, group_cap_io, count + 1)) {
+                return -1;
+            }
+            groups = *groups_io;
             cur = count++;
             memset(&groups[cur], 0, sizeof(groups[cur]));
             section = 0;
@@ -644,18 +661,15 @@ int main(void) {
         return 1;
     }
 
-    GroupShape *groups = (GroupShape *)calloc(MAX_GROUPS, sizeof(GroupShape));
-    if (!groups) {
-        fprintf(stderr, "imgtable: out of memory\n");
-        return 1;
-    }
+    GroupShape *groups = NULL;
+    int group_cap = 0;
     int group_count = 0;
     if (heading_index(first) >= 0) {
-        group_count = read_group_shapes(groups, MAX_GROUPS, first);
+        group_count = read_group_shapes(&groups, &group_cap, first);
     }
     if (group_count < 0) {
         fprintf(stderr, "imgtable: failed to parse grouped input\n");
-        free_groups(groups, MAX_GROUPS);
+        free_groups(groups, group_cap);
         free(groups);
         return 1;
     }
