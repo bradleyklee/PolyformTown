@@ -60,4 +60,11 @@ check_contains "$(cat /tmp/hatseq_print_detailed.txt)" "Aggregate" \
 check_contains "$(cat /tmp/hatseq_print_live_n2.txt)" "[ 0 |" \
   "hatseq_print live-boundary n=2 output"
 
+
+./hat_surrounds tiles/monomino.tile > /tmp/hat_surrounds_mono.txt
+check_contains "$(cat /tmp/hat_surrounds_mono.txt)" "Aggregate" \
+  "hat_surrounds detailed output"
+check_eq "$(tail -n 1 /tmp/hat_surrounds_mono.txt)" \
+  "count=1" "hat_surrounds monomino"
+
 echo 0
