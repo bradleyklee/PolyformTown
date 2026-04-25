@@ -70,7 +70,10 @@ int build_boundary_vertices(const Poly *p, Coord *verts) {
         const Cycle *c = &p->cycles[i];
         for (int j = 0; j < c->n; j++) {
             Coord v = c->v[j];
-            if (!coord_in_list(verts, count, v)) verts[count++] = v;
+            if (!coord_in_list(verts, count, v)) {
+                if (count >= MAX_BOUNDARY_VERTS) return -1;
+                verts[count++] = v;
+            }
         }
     }
     return count;
@@ -79,6 +82,7 @@ int build_boundary_vertices(const Poly *p, Coord *verts) {
 int poly_has_live_boundary(const Poly *p, const Tile *tile) {
     Coord verts[2 * MAX_BOUNDARY_VERTS];
     int vc = build_frontier_vertices(p, verts);
+    if (vc < 0 || vc > 2 * MAX_BOUNDARY_VERTS) return 0;
     for (int i = 0; i < vc; i++) {
         if (!has_vertex_completion_steps(p, tile, verts[i], NULL, 0, -1)) {
             return 0;
@@ -91,6 +95,7 @@ static int hidden_connected_lattice(const Coord *hidden, int hidden_count, int l
     int queue[MAX_BOUNDARY_VERTS];
     int seen[MAX_BOUNDARY_VERTS] = {0};
     int qh = 0, qt = 0, reached = 0;
+    if (hidden_count > MAX_BOUNDARY_VERTS) return 0;
     if (hidden_count <= 1) return 1;
     seen[0] = 1;
     queue[qt++] = 0;
@@ -116,11 +121,15 @@ static int build_next_hidden(const Coord *prev_boundary,
                              Coord *out_hidden) {
     int out_count = 0;
     for (int i = 0; i < old_hidden_count; i++) {
-        if (!coord_in_list(out_hidden, out_count, old_hidden[i])) out_hidden[out_count++] = old_hidden[i];
+        if (!coord_in_list(out_hidden, out_count, old_hidden[i])) {
+            if (out_count >= MAX_BOUNDARY_VERTS) return -1;
+            out_hidden[out_count++] = old_hidden[i];
+        }
     }
     for (int i = 0; i < prev_count; i++) {
         Coord v = prev_boundary[i];
         if (!point_on_poly_boundary(grown, v, lattice) && !coord_in_list(out_hidden, out_count, v)) {
+            if (out_count >= MAX_BOUNDARY_VERTS) return -1;
             out_hidden[out_count++] = v;
         }
     }
@@ -158,6 +167,7 @@ static void dfs_vertex_completions(const Poly *p,
                 next_hidden_count = build_next_hidden(prev_boundary, prev_boundary_count,
                                                       &grown, hidden, hidden_count,
                                                       ctx->tile->lattice, next_hidden);
+                if (grown_boundary_count < 0 || next_hidden_count < 0) continue;
                 if (!hidden_connected_lattice(next_hidden, next_hidden_count, ctx->tile->lattice)) continue;
                 target_present = point_on_poly_boundary(&grown, ctx->target, ctx->tile->lattice);
                 if (!target_present) {
