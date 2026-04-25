@@ -132,28 +132,6 @@ Defaults are `3 4 6`.
   [--live-boundary] [--strict-three]
 ```
 
-### hat_surrounds
-
-Enumerate all unique ways to fully cover the seed tile boundary
-with attached copies of the same tile.
-
-Output is detail-oriented and depiction-friendly:
-
-- `[k]`
-- `Aggregate`
-- one aggregate shape line
-- `Tiles`
-- one line per contributing tile cycle
-
-A final `count=N` summary line is printed after all entries.
-
-`--live-boundary` filters to surrounds whose resulting boundary
-still has at least one completion at every frontier vertex.
-
-```bash
-./hat_surrounds [tilefile] [--live-boundary]
-```
-
 ### hatseq_print
 
 Print canonical hatseq representatives at level `N`.
@@ -214,7 +192,6 @@ Run with defaults (monomino, built-in `N`):
 ./vcomp_count 3 tiles/hat.tile
 ./hatseq_count 3 tiles/hat.tile --live-boundary
 ./hatseq_count 3 tiles/hat.tile 3 6 --live-boundary --strict-three
-./hat_surrounds tiles/hat.tile --live-boundary
 ./hatseq_print 1 tiles/hat.tile 3 6 --detailed
 ```
 
