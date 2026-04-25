@@ -7,7 +7,7 @@ POLY_CORE = $(CORE) $(SRC)/poly_pipeline.o
 VCOMP_CORE = $(CORE) $(SRC)/vcomp.o $(SRC)/vcomp_pipeline.o
 HATSEQ_CORE = $(CORE) $(SRC)/vcomp.o $(SRC)/hatseq_pipeline.o
 
-all: poly_count poly_print vcomp_count vcomp_print hatseq_count hatseq_print hat_surrounds imgtable tile_to_imgtable
+all: poly_count poly_print vcomp_count vcomp_print hatseq_count hatseq_print imgtable tile_to_imgtable
 
 poly_count: $(SRC)/count_poly.o $(POLY_CORE)
 	$(CC) $(CFLAGS) -o $@ $(SRC)/count_poly.o $(POLY_CORE)
@@ -19,7 +19,7 @@ $(SRC)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) -I$(SRC) -c $< -o $@
 
 clean:
-	rm -f $(SRC)/*.o poly_count poly_print vcomp_count count_vcomp vcomp_print hatseq_count hatseq_print hat_surrounds imgtable tile_to_imgtable
+	rm -f $(SRC)/*.o poly_count poly_print vcomp_count count_vcomp vcomp_print hatseq_count hatseq_print imgtable tile_to_imgtable
 
 vcomp_count: $(SRC)/count_vcomp.o $(VCOMP_CORE)
 	$(CC) $(CFLAGS) -o $@ $(SRC)/count_vcomp.o $(VCOMP_CORE)
@@ -35,9 +35,6 @@ hatseq_count: $(SRC)/count_hatseq.o $(HATSEQ_CORE)
 
 hatseq_print: $(SRC)/print_hatseq.o $(HATSEQ_CORE)
 	$(CC) $(CFLAGS) -o $@ $(SRC)/print_hatseq.o $(HATSEQ_CORE)
-
-hat_surrounds: $(SRC)/hat_surrounds.o $(HATSEQ_CORE)
-	$(CC) $(CFLAGS) -o $@ $(SRC)/hat_surrounds.o $(HATSEQ_CORE)
 	
 imgtable: $(SRC)/imgtable.o
 	$(CC) $(CFLAGS) -o $@ $(SRC)/imgtable.o -lm
