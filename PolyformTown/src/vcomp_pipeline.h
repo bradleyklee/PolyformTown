@@ -28,6 +28,7 @@ typedef int (*VCompLevelFn)(int level,
 
 void run_vcomp_levels(const Tile *tile,
                       int max_n,
+                      int live_only,
                       VCompLevelFn on_level,
                       void *userdata);
 

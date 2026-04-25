@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "poly_pipeline.h"
 
@@ -23,8 +24,15 @@ static int on_level(int level,
 int main(int argc, char **argv) {
     int max_n = 5;
     const char *tile_path = "tiles/monomino.tile";
+    int live_only = 0;
     if (argc > 1) max_n = atoi(argv[1]);
-    if (argc > 2) tile_path = argv[2];
+    for (int i = 2; i < argc; i++) {
+        if (strcmp(argv[i], "--live-only") == 0) {
+            live_only = 1;
+            continue;
+        }
+        tile_path = argv[i];
+    }
     if (max_n < 1) max_n = 1;
     if (max_n > 31) max_n = 31;
 
@@ -35,6 +43,6 @@ int main(int argc, char **argv) {
     }
 
     PrintCtx ctx = { max_n };
-    run_poly_levels(&tile, max_n, on_level, &ctx);
+    run_poly_levels(&tile, max_n, live_only, on_level, &ctx);
     return 0;
 }

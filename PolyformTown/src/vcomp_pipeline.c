@@ -176,8 +176,10 @@ typedef struct {
     VCompStateVec *levels;
     StateSet *level_sets;
     HashTable *poly_seen;
+    const Tile *tile;
     int lattice;
     int max_level;
+    int live_only;
 } EmitCtx;
 
 static void collect_emit(const Poly *p,
@@ -196,6 +198,9 @@ static void collect_emit(const Poly *p,
     for (int i = 0; i < hidden_count; i++) s.hidden[i] = hidden[i];
     qsort(s.hidden, s.hidden_count, sizeof(Coord), coord_cmp);
     poly_hash_key_lattice(p, ctx->lattice, &key);
+    if (ctx->live_only && !poly_has_live_boundary_local(&key, ctx->tile)) {
+        return;
+    }
     h = state_hash64(&s, &key);
 
     if (stateset_insert(&ctx->level_sets[hidden_count],
@@ -210,6 +215,7 @@ static void collect_emit(const Poly *p,
 
 void run_vcomp_levels(const Tile *tile,
                       int max_n,
+                      int live_only,
                       VCompLevelFn on_level,
                       void *userdata) {
     VCompStateVec levels[VCOMP_MAX_LEVELS];
@@ -236,8 +242,10 @@ void run_vcomp_levels(const Tile *tile,
     ectx.levels = levels;
     ectx.level_sets = level_sets;
     ectx.poly_seen = poly_seen;
+    ectx.tile = tile;
     ectx.lattice = tile->lattice;
     ectx.max_level = max_n;
+    ectx.live_only = live_only;
 
     for (int level = 0; level <= max_n; level++) {
         if (on_level &&

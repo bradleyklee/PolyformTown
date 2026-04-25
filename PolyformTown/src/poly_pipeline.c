@@ -3,9 +3,11 @@
 #include "attach.h"
 #include "cycle.h"
 #include "hash.h"
+#include "vcomp.h"
 
 void run_poly_levels(const Tile *tile,
                      int max_n,
+                     int live_only,
                      PolyLevelFn on_level,
                      void *userdata) {
     Poly seed_raw, seed;
@@ -45,6 +47,10 @@ void run_poly_levels(const Tile *tile,
                         poly_hash_key_lattice(&grown,
                                               tile->lattice,
                                               &canon);
+                        if (live_only &&
+                            !poly_has_live_boundary_local(&canon, tile)) {
+                            continue;
+                        }
                         if (hash_insert(&seen, &canon)) vec_push(&next, &canon);
                     }
                 }

@@ -50,28 +50,4 @@ check_contains "$line" "[ 0 | (r=sqrt(3)) | (6:1,0;1/2,r/2) | (6 0 0,6 1 0,6 0 1
 line="$(./vcomp_print 0 tiles/triangle.tile | head -n 1)"
 check_contains "$line" "[ 0 | (r=sqrt(3)) | (6:1,0;1/2,r/2) | (6 0 0,6 1 0,6 0 1) ]" "vcomp_print format"
 
-./hatseq_print 1 tiles/hat.tile 3 6 --live-boundary --strict-three \
-  --detailed > /tmp/hatseq_print_detailed.txt
-check_contains "$(cat /tmp/hatseq_print_detailed.txt)" "Aggregate" \
-  "hatseq_print detailed output"
-
-./hatseq_print 2 tiles/hat.tile 3 6 --live-boundary \
-  > /tmp/hatseq_print_live_n2.txt
-check_contains "$(cat /tmp/hatseq_print_live_n2.txt)" "[ 0 |" \
-  "hatseq_print live-boundary n=2 output"
-
-
-./hat_surrounds --help > /tmp/hat_surrounds_help.txt
-check_contains "$(cat /tmp/hat_surrounds_help.txt)" "usage:" \
-  "hat_surrounds help usage"
-check_contains "$(cat /tmp/hat_surrounds_help.txt)" "imgtable" \
-  "hat_surrounds help depict"
-
-if ./hat_surrounds tiles/monomino.tile >/tmp/hat_surrounds_bad.txt 2>&1; then
-    echo "FAIL: hat_surrounds should reject tile arguments" >&2
-    exit 1
-fi
-check_contains "$(cat /tmp/hat_surrounds_bad.txt)" "unexpected argument" \
-  "hat_surrounds rejects tile arg"
-
 echo 0

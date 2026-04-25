@@ -89,8 +89,10 @@ make
 
 Print the count at each level `1..N`.
 
+`--live-only` filters out states with DEAD boundaries.
+
 ```bash
-./poly_count N [tilefile]
+./poly_count N [tilefile] [--live-only]
 ```
 
 ### poly_print
@@ -98,15 +100,17 @@ Print the count at each level `1..N`.
 Print the canonical edge form for each shape at level `N`.
 
 ```bash
-./poly_print N [tilefile]
+./poly_print N [tilefile] [--live-only]
 ```
 
 ### vcomp_count
 
 Print the vertex-completion count at each level `1..N`.
 
+`--live-only` filters out states with DEAD boundaries.
+
 ```bash
-./vcomp_count N [tilefile]
+./vcomp_count N [tilefile] [--live-only]
 ```
 
 ### vcomp_print
@@ -114,70 +118,7 @@ Print the vertex-completion count at each level `1..N`.
 Print the canonical vertex-completion representatives at level `N`.
 
 ```bash
-./vcomp_print N [tilefile]
-```
-
-### hatseq_count
-
-Run hat-sequence completion counts at levels `1..N`.
-
-Selectors are optional valence tokens (`3`, `4`, `6`) after tilefile.
-Defaults are `3 4 6`.
-
-`--live-boundary` keeps no-hole/live-boundary states only.
-`--strict-three` enables strict three-around-target completion mode.
-
-```bash
-./hatseq_count N [tilefile] [3] [4] [6] \
-  [--live-boundary] [--strict-three]
-```
-
-### hat_surrounds
-
-Enumerate all unique ways to fully cover the Hat seed tile
-boundary with attached Hat copies.
-
-Output is detail-oriented and depiction-friendly:
-
-- `[k]`
-- `Aggregate`
-- one aggregate shape line
-- `Tiles`
-- one line per contributing tile cycle
-
-A final `count=N` summary line is printed after all entries.
-
-`--live-boundary` filters to surrounds whose resulting boundary
-still has at least one completion at every frontier vertex.
-
-```bash
-./hat_surrounds [--live-boundary]
-```
-
-
-Depict directly with:
-
-```bash
-./hat_surrounds --live-boundary | ./imgtable > out.svg
-```
-
-### hatseq_print
-
-Print canonical hatseq representatives at level `N`.
-
-Use `--detailed` to include per-aggregate tile overlays for depiction.
-Pipe output to `imgtable` to render SVG.
-
-Strict-three 3/6 depiction at `N=1`:
-
-```bash
-./hatseq_print 1 tiles/hat.tile 3 6 \
-  --strict-three --detailed | ./imgtable > out.svg
-```
-
-```bash
-./hatseq_print N [tilefile] [3] [4] [6] \
-  [--live-boundary] [--strict-three] [--detailed]
+./vcomp_print N [tilefile] [--live-only]
 ```
 
 ## QC / smoke test
@@ -219,10 +160,6 @@ Run with defaults (monomino, built-in `N`):
 ```bash
 ./poly_count 8 tiles/kite.tile
 ./vcomp_count 3 tiles/hat.tile
-./hatseq_count 3 tiles/hat.tile --live-boundary
-./hatseq_count 3 tiles/hat.tile 3 6 --live-boundary --strict-three
-./hat_surrounds tiles/hat.tile --live-boundary
-./hatseq_print 1 tiles/hat.tile 3 6 --detailed
 ```
 
 ## Expected hole counts from print

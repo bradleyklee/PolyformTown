@@ -11,6 +11,7 @@ typedef int (*PolyLevelFn)(int level,
 
 void run_poly_levels(const Tile *tile,
                      int max_n,
+                     int live_only,
                      PolyLevelFn on_level,
                      void *userdata);
 
