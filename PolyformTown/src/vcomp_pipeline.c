@@ -185,6 +185,7 @@ static void collect_emit(const Poly *p,
                          int hidden_count,
                          void *userdata) {
     EmitCtx *ctx = userdata;
+    if (hidden_count < 0 || hidden_count > VCOMP_MAX_HIDDEN) return;
     if (hidden_count > ctx->max_level) return;
 
     VCompState s;
