@@ -38,10 +38,21 @@ typedef struct {
     int tile_cap;
 } GroupShape;
 
+typedef enum {
+    CHIRALITY_UNKNOWN = 0,
+    CHIRALITY_NORMAL,
+    CHIRALITY_REFLECTED
+} Chirality;
+
 typedef struct {
     const char *s;
     const Shape *shape;
 } ExprParser;
+
+typedef struct {
+    double a11, a12, a21, a22;
+    double tx, ty;
+} Affine2;
 
 static void skip_ws(const char **pp) {
     while (isspace((unsigned char)**pp)) (*pp)++;
@@ -507,6 +518,89 @@ static int read_group_shapes(GroupShape **groups_io, int *group_cap_io,
     return kept;
 }
 
+static int wrap_index(int n, int i) {
+    int r = i % n;
+    if (r < 0) r += n;
+    return r;
+}
+
+static int affine_build(const DPoint *r0, const DPoint *r1, const DPoint *r2,
+                        const DPoint *c0, const DPoint *c1, const DPoint *c2,
+                        Affine2 *out) {
+    double ux1 = r1->x - r0->x, uy1 = r1->y - r0->y;
+    double ux2 = r2->x - r0->x, uy2 = r2->y - r0->y;
+    double vx1 = c1->x - c0->x, vy1 = c1->y - c0->y;
+    double vx2 = c2->x - c0->x, vy2 = c2->y - c0->y;
+    double det = ux1 * uy2 - uy1 * ux2;
+    if (fabs(det) < 1e-12) return 0;
+    double inv11 =  uy2 / det, inv12 = -ux2 / det;
+    double inv21 = -uy1 / det, inv22 =  ux1 / det;
+    out->a11 = vx1 * inv11 + vx2 * inv21;
+    out->a12 = vx1 * inv12 + vx2 * inv22;
+    out->a21 = vy1 * inv11 + vy2 * inv21;
+    out->a22 = vy1 * inv12 + vy2 * inv22;
+    out->tx = c0->x - out->a11 * r0->x - out->a12 * r0->y;
+    out->ty = c0->y - out->a21 * r0->x - out->a22 * r0->y;
+    return 1;
+}
+
+static int affine_maps_point(const Affine2 *a, const DPoint *r, const DPoint *c) {
+    double x = a->a11 * r->x + a->a12 * r->y + a->tx;
+    double y = a->a21 * r->x + a->a22 * r->y + a->ty;
+    return fabs(x - c->x) < 1e-6 && fabs(y - c->y) < 1e-6;
+}
+
+static int cycle_relation_det_sign(const Shape *ref, const Shape *cand) {
+    if (!ref || !cand || ref->cycle_count <= 0 || cand->cycle_count <= 0) {
+        return 0;
+    }
+    const Path *rp = &ref->cycles[0];
+    const Path *cp = &cand->cycles[0];
+    if (rp->n != cp->n || rp->n < 3) return 0;
+
+    int n = rp->n;
+    DPoint r0 = vertex_to_xy(ref, rp->v[0]);
+    DPoint r1 = vertex_to_xy(ref, rp->v[1]);
+    int rk = 2;
+    DPoint r2 = vertex_to_xy(ref, rp->v[rk]);
+    while (rk < n) {
+        double ux1 = r1.x - r0.x, uy1 = r1.y - r0.y;
+        double ux2 = r2.x - r0.x, uy2 = r2.y - r0.y;
+        if (fabs(ux1 * uy2 - uy1 * ux2) >= 1e-12) break;
+        rk++;
+        if (rk < n) r2 = vertex_to_xy(ref, rp->v[rk]);
+    }
+    if (rk >= n) return 0;
+
+    for (int j = 0; j < n; j++) {
+        for (int dir = -1; dir <= 1; dir += 2) {
+            int j0 = j;
+            int j1 = wrap_index(n, j + dir);
+            int j2 = wrap_index(n, j + dir * rk);
+            DPoint c0 = vertex_to_xy(cand, cp->v[j0]);
+            DPoint c1 = vertex_to_xy(cand, cp->v[j1]);
+            DPoint c2 = vertex_to_xy(cand, cp->v[j2]);
+            Affine2 a;
+            if (!affine_build(&r0, &r1, &r2, &c0, &c1, &c2, &a)) continue;
+            int ok = 1;
+            for (int t = 0; t < n; t++) {
+                DPoint rt = vertex_to_xy(ref, rp->v[t]);
+                DPoint ct = vertex_to_xy(cand, cp->v[wrap_index(n, j + dir * t)]);
+                if (!affine_maps_point(&a, &rt, &ct)) {
+                    ok = 0;
+                    break;
+                }
+            }
+            if (ok) {
+                double det = a.a11 * a.a22 - a.a12 * a.a21;
+                if (det > 1e-9) return +1;
+                if (det < -1e-9) return -1;
+            }
+        }
+    }
+    return 0;
+}
+
 static void shape_bbox(const Shape *s, double *minx, double *miny, double *maxx, double *maxy) {
     int first = 1;
     *minx = *miny = *maxx = *maxy = 0.0;
@@ -641,7 +735,15 @@ static void emit_group_svg(FILE *fp, const GroupShape *g,
     double ty = cell_y + (cell_h - scale * bh) * 0.5 + scale * maxy;
     emit_shape_path(fp, g->aggregate, tx, ty, scale, "#dddddd", "black", STROKE_W);
     for (int i = 0; i < g->tile_count; i++) {
-        emit_shape_path(fp, &g->tiles[i], tx, ty, scale, "none", "#666666", 0.8);
+        const char *fill = "#d9e9f7";
+        Chirality c = CHIRALITY_UNKNOWN;
+        if (g->tile_count > 0) {
+            int sign = cycle_relation_det_sign(&g->tiles[0], &g->tiles[i]);
+            if (sign > 0) c = CHIRALITY_NORMAL;
+            else if (sign < 0) c = CHIRALITY_REFLECTED;
+        }
+        if (c == CHIRALITY_REFLECTED) fill = "#bcd0e2";
+        emit_shape_path(fp, &g->tiles[i], tx, ty, scale, fill, "#666666", 0.8);
     }
 }
 
