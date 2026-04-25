@@ -1,4 +1,5 @@
-Hat vertex-surround via restricted valence
+RL0 liveness validation for RL1 pruning
 
-Investigate growth using only v=6 and v=3 vertices. Restricting
-valence may reduce branching and avoid reflected tiles.
+Validate and calibrate the RL0 boundary liveness predicate used for
+RL1 pruning. Focus on false-positive/false-negative analysis across
+simple and complex tiles, and lock a reproducible regression set.

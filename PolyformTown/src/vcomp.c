@@ -14,6 +14,7 @@ typedef struct {
     Coord target;
     int base_hidden_count;
     int required_steps;
+    int max_steps;
     int stop_after_first;
     int *stop_flag;
     VCompEmitFn emit;
@@ -91,6 +92,18 @@ int poly_has_live_boundary(const Poly *p, const Tile *tile) {
     return 1;
 }
 
+int poly_has_live_boundary_local(const Poly *p, const Tile *tile) {
+    Coord verts[2 * MAX_BOUNDARY_VERTS];
+    int vc = build_frontier_vertices(p, verts);
+    if (vc < 0 || vc > 2 * MAX_BOUNDARY_VERTS) return 0;
+    for (int i = 0; i < vc; i++) {
+        if (!has_vertex_completion_local(p, tile, verts[i], NULL, 0)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 static int hidden_connected_lattice(const Coord *hidden, int hidden_count, int lattice) {
     int queue[MAX_BOUNDARY_VERTS];
     int seen[MAX_BOUNDARY_VERTS] = {0};
@@ -146,6 +159,7 @@ static void dfs_vertex_completions(const Poly *p,
                                    Cycle *trace_tiles,
                                    int trace_tile_count) {
     if (ctx->stop_after_first && *ctx->stop_flag) return;
+    if (ctx->max_steps >= 0 && completion_steps >= ctx->max_steps) return;
     Edge frontier[MAX_VERTS * MAX_CYCLES];
     int fc = build_frontier_edges(p, frontier);
     for (int be = 0; be < fc; be++) {
@@ -233,6 +247,7 @@ void enumerate_vertex_completions_steps(const Poly *base,
     ctx.target = target;
     ctx.base_hidden_count = initial_hidden_count;
     ctx.required_steps = required_steps;
+    ctx.max_steps = required_steps;
     ctx.stop_after_first = 0;
     ctx.stop_flag = &stop;
     ctx.emit = emit;
@@ -264,6 +279,7 @@ void enumerate_vertex_completions_steps_trace(const Poly *base,
     ctx.target = target;
     ctx.base_hidden_count = initial_hidden_count;
     ctx.required_steps = required_steps;
+    ctx.max_steps = required_steps;
     ctx.stop_after_first = 0;
     ctx.stop_flag = &stop;
     ctx.trace_emit = emit;
@@ -321,6 +337,7 @@ int has_vertex_completion_steps(const Poly *base,
     ctx.target = target;
     ctx.base_hidden_count = initial_hidden_count;
     ctx.required_steps = required_steps;
+    ctx.max_steps = required_steps;
     ctx.stop_after_first = 1;
     ctx.stop_flag = &probe.found;
     ctx.emit = probe_emit;
@@ -344,6 +361,57 @@ int has_vertex_completion(const Poly *base,
     return has_vertex_completion_steps(base, tile, target,
                                        initial_hidden, initial_hidden_count,
                                        -1);
+}
+
+static int target_vertex_valence(const Tile *tile, Coord target) {
+    if (tile->lattice == TILE_LATTICE_TETRILLE) {
+        if (target.v == 3 || target.v == 4 || target.v == 6) return target.v;
+    }
+    return lattice_direction_count(tile->lattice);
+}
+
+static int has_vertex_completion_bounded(const Poly *base,
+                                         const Tile *tile,
+                                         Coord target,
+                                         const Coord *initial_hidden,
+                                         int initial_hidden_count,
+                                         int max_steps) {
+    VCompCtx ctx;
+    Coord initial_boundary[MAX_BOUNDARY_VERTS];
+    Cycle trace_tiles[MAX_VERTS];
+    ProbeCtx probe;
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&probe, 0, sizeof(probe));
+    ctx.tile = tile;
+    ctx.target = target;
+    ctx.base_hidden_count = initial_hidden_count;
+    ctx.required_steps = -1;
+    ctx.max_steps = max_steps;
+    ctx.stop_after_first = 1;
+    ctx.stop_flag = &probe.found;
+    ctx.emit = probe_emit;
+    ctx.userdata = &probe;
+    ctx.variant_count = tile->variant_count;
+    for (int i = 0; i < tile->variant_count; i++) {
+        ctx.variants[i] = tile->variants[i];
+    }
+    int initial_boundary_count = build_boundary_vertices(base, initial_boundary);
+    dfs_vertex_completions(base, &ctx, initial_hidden, initial_hidden_count,
+                           initial_boundary, initial_boundary_count, 0,
+                           trace_tiles, 0);
+    return probe.found;
+}
+
+int has_vertex_completion_local(const Poly *base,
+                                const Tile *tile,
+                                Coord target,
+                                const Coord *initial_hidden,
+                                int initial_hidden_count) {
+    int valence = target_vertex_valence(tile, target);
+    int max_steps = valence > 0 ? 2 * valence : 8;
+    return has_vertex_completion_bounded(base, tile, target,
+                                         initial_hidden, initial_hidden_count,
+                                         max_steps);
 }
 
 void enumerate_vertex_completions(const Poly *base,
