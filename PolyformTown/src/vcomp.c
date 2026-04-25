@@ -165,7 +165,7 @@ static void dfs_vertex_completions(const Poly *p,
                         if (ctx->required_steps < 0 ||
                             completion_steps + 1 == ctx->required_steps) {
                             if (ctx->trace_emit) {
-                                Cycle out_tiles[MAX_VERTS];
+                                Cycle out_tiles[MAX_VERTS + 1];
                                 for (int ti = 0; ti < trace_tile_count; ti++) {
                                     out_tiles[ti] = trace_tiles[ti];
                                 }
