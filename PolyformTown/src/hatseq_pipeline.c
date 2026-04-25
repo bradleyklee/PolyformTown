@@ -203,19 +203,25 @@ static void collect_emit_trace(const Poly *p,
                                int added_tile_count,
                                void *userdata) {
     EmitCtx *ctx = userdata;
+    int parent_tile_count;
 
     VCompState s;
     Poly key;
     uint64_t h;
     int level;
+    if (hidden_count < 0 || hidden_count > VCOMP_MAX_HIDDEN) return;
     s.poly = *p;
     s.hidden_count = hidden_count;
     for (int i = 0; i < hidden_count; i++) s.hidden[i] = hidden[i];
     s.tile_count = 0;
     if (ctx->parent_state) {
-        s.tile_count = ctx->parent_state->tile_count;
-        for (int ti = 0; ti < ctx->parent_state->tile_count &&
-                         ti < VCOMP_MAX_TILES; ti++) {
+        parent_tile_count = ctx->parent_state->tile_count;
+        if (parent_tile_count < 0) parent_tile_count = 0;
+        if (parent_tile_count > VCOMP_MAX_TILES) {
+            parent_tile_count = VCOMP_MAX_TILES;
+        }
+        s.tile_count = parent_tile_count;
+        for (int ti = 0; ti < parent_tile_count; ti++) {
             s.tiles[ti] = ctx->parent_state->tiles[ti];
         }
     }
