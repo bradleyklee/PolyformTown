@@ -10,7 +10,7 @@
 #include "core/lattice.h"
 #include "core/tetrille.h"
 #include "core/tile.h"
-#include "vcomp.h"
+#include "throughput/vcomp.h"
 
 #define RL0_MAX_TRACE MAX_VERTS
 

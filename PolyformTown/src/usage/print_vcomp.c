@@ -4,7 +4,7 @@
 
 #include "core/cycle.h"
 #include "core/hash.h"
-#include "vcomp_pipeline.h"
+#include "throughput/vcomp_pipeline.h"
 
 typedef struct {
     int max_n;

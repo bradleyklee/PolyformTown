@@ -1,7 +1,7 @@
 #include "core/boundary.h"
 
 #include "core/attach.h"
-#include "vcomp.h"
+#include "throughput/vcomp.h"
 
 #define MAX_BOUNDARY_VERTS (MAX_VERTS * MAX_CYCLES)
 

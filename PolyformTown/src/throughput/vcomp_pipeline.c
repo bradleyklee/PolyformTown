@@ -7,7 +7,7 @@
 
 #include "core/hash.h"
 #include "core/tetrille.h"
-#include "vcomp.h"
+#include "throughput/vcomp.h"
 #include "core/boundary.h"
 #include "core/attach.h"
 

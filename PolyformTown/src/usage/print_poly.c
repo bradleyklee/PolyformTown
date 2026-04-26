@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "poly_pipeline.h"
+#include "throughput/poly_pipeline.h"
 
 typedef struct {
     int max_n;
