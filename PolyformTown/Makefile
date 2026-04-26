@@ -41,6 +41,9 @@ rl0_generate: $(SRC)/rl0/generate_rl0.o $(VCOMP_CORE)
 rl0_depict: $(SRC)/usage/depict_rl0.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/tetrille.o $(SRC)/lattice.o $(SRC)/hash.o $(SRC)/vcomp.o $(SRC)/attach.o
 	$(CC) $(CFLAGS) -o $@ $(SRC)/usage/depict_rl0.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/tetrille.o $(SRC)/lattice.o $(SRC)/hash.o $(SRC)/vcomp.o $(SRC)/attach.o
 
+rl0_stats: $(SRC)/usage/rl0_stats.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/tetrille.o $(SRC)/lattice.o $(SRC)/vcomp.o $(SRC)/attach.o
+	$(CC) $(CFLAGS) -o $@ $(SRC)/usage/rl0_stats.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/tetrille.o $(SRC)/lattice.o $(SRC)/vcomp.o $(SRC)/attach.o
+
 test: all
 	./tests/smoke.sh
 
