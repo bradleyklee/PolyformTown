@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cycle.h"
-#include "hash.h"
+#include "core/cycle.h"
+#include "core/hash.h"
 #include "vcomp_pipeline.h"
 
 typedef struct {

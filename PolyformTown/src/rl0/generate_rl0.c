@@ -4,10 +4,12 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include "cycle.h"
-#include "lattice.h"
-#include "tetrille.h"
-#include "tile.h"
+#include "core/cycle.h"
+#include "core/attach.h"
+#include "core/boundary.h"
+#include "core/lattice.h"
+#include "core/tetrille.h"
+#include "core/tile.h"
 #include "vcomp.h"
 
 #define RL0_MAX_TRACE MAX_VERTS
@@ -262,7 +264,7 @@ static void emit_completion(const Poly *p,
     (void)hidden;
     (void)hidden_count;
 
-    if (!poly_has_live_boundary_local(p, ctx->tile)) return;
+    if (!poly_has_live_boundary(p, ctx->tile)) return;
 
     all_tiles[0] = ctx->seed_tile;
     all_indices[0] = cycle_vertex_index(&ctx->seed_tile, ctx->target);

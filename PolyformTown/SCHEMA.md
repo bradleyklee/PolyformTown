@@ -7,14 +7,18 @@ lattice symmetries, and deduplicating by hash. One core pipeline
 supports square, triangular, and tetrille-style tagged lattices.
 
 ## High-level architecture
-- `src/cycle.*`: geometry primitives (`Coord`, `Cycle`, `Poly`),
+- `src/core/cycle.*`: geometry primitives (`Coord`, `Cycle`, `Poly`),
   transforms, orientation rules, and canonicalization.
-- `src/tile.*`: tile parser plus symmetry-variant generation.
-- `src/attach.*`: frontier-edge alignment, edge cancellation,
+- `src/core/tile.*`: tile parser plus symmetry-variant generation.
+- `src/core/attach.*`: frontier-edge alignment, edge cancellation,
   cycle extraction, and overlap rejection.
-- `src/hash.*`: open-addressed hash table for deduping canonical
+- `src/core/boundary.*`: boundary vertex extraction and live/dead
+  checks shared by pipelines.
+- `src/core/hash.*`: open-addressed hash table for deduping canonical
   polyforms.
-- `src/vec.*`: dynamic vector used by level expansion loops.
+- `src/core/vec.*`: dynamic vector used by level expansion loops.
+- `src/core/lattice.*` + `src/core/tetrille.*`: lattice-specific
+  embedding and tetrille translation/tag rules.
 - `src/count_poly.c` / `src/print_poly.c`: edge-attachment
   enumeration drivers.
 - `src/vcomp.*`, `src/count_vcomp.c`, `src/print_vcomp.c`:
@@ -63,8 +67,8 @@ supports square, triangular, and tetrille-style tagged lattices.
    `../meta/LESSONS.md`, and `../meta/FUTURES.md` to understand
    team process around changes.
 3. Trace one `poly_count` level in `src/count_poly.c`.
-4. Step through `try_attach_tile_poly` in `src/attach.c`.
-5. Read `poly_canonicalize_lattice` in `src/cycle.c` to learn
+4. Step through `try_attach_tile_poly` in `src/core/attach.c`.
+5. Read `poly_canonicalize_lattice` in `src/core/cycle.c` to learn
    dedupe invariants.
 6. Compare `count_poly.c` vs `count_vcomp.c` to see frontier-edge
    vs vertex-completion search styles.

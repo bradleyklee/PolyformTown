@@ -1,4 +1,4 @@
-#include "tetrille.h"
+#include "core/tetrille.h"
 
 static int is_unit6(int dx, int dy) {
     if (dx == 1 && dy == 0) return 1;

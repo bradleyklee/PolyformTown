@@ -1,7 +1,7 @@
 #ifndef TILE_H
 #define TILE_H
 
-#include "cycle.h"
+#include "core/cycle.h"
 
 #define TILE_LATTICE_SQUARE 0
 #define TILE_LATTICE_TRIANGULAR 1

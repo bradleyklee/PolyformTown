@@ -1,7 +1,7 @@
 #ifndef LATTICE_H
 #define LATTICE_H
 
-#include "tile.h"
+#include "core/tile.h"
 
 int lattice_transform_count(int lattice);
 int lattice_direction_count(int lattice);

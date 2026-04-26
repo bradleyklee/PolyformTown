@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cycle.h"
-#include "tile.h"
-#include "vcomp.h"
+#include "core/cycle.h"
+#include "core/attach.h"
+#include "core/boundary.h"
+#include "core/tile.h"
 
 #define MAX_TILES_PER_RECORD MAX_VERTS
 
@@ -285,7 +286,7 @@ static int record_matches(const RL0Record *r,
         }
         if (!ok) return 0;
     }
-    if (opt->live_only && !poly_has_live_boundary_local(&r->boundary, tile)) {
+    if (opt->live_only && !poly_has_live_boundary(&r->boundary, tile)) {
         return 0;
     }
     return 1;

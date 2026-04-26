@@ -1,6 +1,6 @@
-#include "lattice.h"
+#include "core/lattice.h"
 
-#include "tetrille.h"
+#include "core/tetrille.h"
 
 int lattice_transform_count(int lattice) {
     if (lattice == TILE_LATTICE_TRIANGULAR) return 12;

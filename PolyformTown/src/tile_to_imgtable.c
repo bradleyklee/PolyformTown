@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "tile.h"
+#include "core/tile.h"
 
 static void usage(const char *argv0) {
     fprintf(stderr, "usage: %s TILEFILE\n", argv0);

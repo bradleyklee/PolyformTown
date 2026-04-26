@@ -1,8 +1,8 @@
 #ifndef ATTACH_H
 #define ATTACH_H
 
-#include "cycle.h"
-#include "tile.h"
+#include "core/cycle.h"
+#include "core/tile.h"
 
 int build_frontier_edges(const Poly *p, Edge *edges);
 int build_frontier_vertices(const Poly *p, Coord *verts);

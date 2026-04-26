@@ -1,8 +1,9 @@
 #include "vcomp.h"
-#include "attach.h"
-#include "cycle.h"
-#include "lattice.h"
-#include "tetrille.h"
+#include "core/attach.h"
+#include "core/boundary.h"
+#include "core/cycle.h"
+#include "core/lattice.h"
+#include "core/tetrille.h"
 #include <string.h>
 
 #define MAX_BOUNDARY_VERTS (MAX_VERTS * MAX_CYCLES)
@@ -63,55 +64,6 @@ static int point_on_poly_boundary(const Poly *p, Coord q, int lattice) {
         if (point_on_cycle(&p->cycles[i], q, lattice)) return 1;
     }
     return 0;
-}
-
-int build_boundary_vertices(const Poly *p, Coord *verts) {
-    int count = 0;
-    for (int i = 0; i < p->cycle_count; i++) {
-        const Cycle *c = &p->cycles[i];
-        for (int j = 0; j < c->n; j++) {
-            Coord v = c->v[j];
-            if (!coord_in_list(verts, count, v)) {
-                if (count >= MAX_BOUNDARY_VERTS) return -1;
-                verts[count++] = v;
-            }
-        }
-    }
-    return count;
-}
-
-int poly_has_live_boundary(const Poly *p, const Tile *tile) {
-    Coord verts[2 * MAX_BOUNDARY_VERTS];
-    int vc = build_frontier_vertices(p, verts);
-    if (vc < 0 || vc > 2 * MAX_BOUNDARY_VERTS) return 0;
-    for (int i = 0; i < vc; i++) {
-        if (!has_vertex_completion_steps(p, tile, verts[i], NULL, 0, -1)) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int poly_has_live_boundary_local(const Poly *p, const Tile *tile) {
-    return poly_has_live_boundary_local_hidden(p, tile, NULL, 0);
-}
-
-int poly_has_live_boundary_local_hidden(const Poly *p,
-                                        const Tile *tile,
-                                        const Coord *hidden,
-                                        int hidden_count) {
-    Coord verts[2 * MAX_BOUNDARY_VERTS];
-    int vc = build_frontier_vertices(p, verts);
-    if (vc < 0 || vc > 2 * MAX_BOUNDARY_VERTS) return 0;
-    for (int i = 0; i < vc; i++) {
-        if (!has_vertex_completion_local(p, tile,
-                                         verts[i],
-                                         hidden,
-                                         hidden_count)) {
-            return 0;
-        }
-    }
-    return 1;
 }
 
 static int hidden_connected_lattice(const Coord *hidden, int hidden_count, int lattice) {

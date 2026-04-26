@@ -1,7 +1,7 @@
 #ifndef VEC_H
 #define VEC_H
 
-#include "cycle.h"
+#include "core/cycle.h"
 #include <stddef.h>
 
 typedef struct {
