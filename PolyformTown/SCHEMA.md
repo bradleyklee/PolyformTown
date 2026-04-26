@@ -19,11 +19,13 @@ supports square, triangular, and tetrille-style tagged lattices.
 - `src/core/vec.*`: dynamic vector used by level expansion loops.
 - `src/core/lattice.*` + `src/core/tetrille.*`: lattice-specific
   embedding and tetrille translation/tag rules.
-- `src/count_poly.c` / `src/print_poly.c`: edge-attachment
+- `src/usage/count_poly.c` / `src/usage/print_poly.c`: edge-attachment
   enumeration drivers.
-- `src/vcomp.*`, `src/count_vcomp.c`, `src/print_vcomp.c`:
+- `src/throughput/vcomp.*`, `src/usage/count_vcomp.c`,
+  `src/usage/print_vcomp.c`:
   vertex-completion enumeration mode.
-- `src/imgtable.c`, `src/tile_to_imgtable.c`: imgtable-style
+- `src/usage/imgtable.c`, `src/usage/tile_to_imgtable.c`:
+  imgtable-style
   conversion and SVG rendering support.
 
 ## Build and checks
@@ -66,12 +68,13 @@ supports square, triangular, and tetrille-style tagged lattices.
 2. Skim `../meta/RESET.md`, `../meta/SUSPEND.md`,
    `../meta/LESSONS.md`, and `../meta/FUTURES.md` to understand
    team process around changes.
-3. Trace one `poly_count` level in `src/count_poly.c`.
+3. Trace one `poly_count` level in `src/usage/count_poly.c`.
 4. Step through `try_attach_tile_poly` in `src/core/attach.c`.
 5. Read `poly_canonicalize_lattice` in `src/core/cycle.c` to learn
    dedupe invariants.
-6. Compare `count_poly.c` vs `count_vcomp.c` to see frontier-edge
-   vs vertex-completion search styles.
+6. Compare `src/usage/count_poly.c` vs
+   `src/usage/count_vcomp.c` to see frontier-edge vs
+   vertex-completion search styles.
 7. Run `bash tests/smoke.sh`, then try small custom tiles to
    observe behavior changes.
 
