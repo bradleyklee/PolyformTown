@@ -55,6 +55,7 @@ Canonicalization rules
 
 Notes
 -----
-- Data is raw RL0 output for reuse by later runlevels.
+- Data contains only live-boundary completions for reuse by later
+  runlevels.
 - There is no CSV header row.
 - Record delimiter lines make streaming and chunk parsing easier.

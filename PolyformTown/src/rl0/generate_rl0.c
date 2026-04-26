@@ -15,6 +15,7 @@
 typedef struct {
     FILE *fp;
     int lattice;
+    const Tile *tile;
     Coord target;
     int record_no;
     Cycle seed_tile;
@@ -258,8 +259,12 @@ static void emit_completion(const Poly *p,
     int all_indices[RL0_MAX_TRACE];
     int total_tile_count = added_tile_count + 1;
 
-    (void)hidden;
-    (void)hidden_count;
+    if (!poly_has_live_boundary_local_hidden(p,
+                                             ctx->tile,
+                                             hidden,
+                                             hidden_count)) {
+        return;
+    }
 
     all_tiles[0] = ctx->seed_tile;
     all_indices[0] = cycle_vertex_index(&ctx->seed_tile, ctx->target);
@@ -353,6 +358,7 @@ int main(int argc, char **argv) {
     RL0Ctx ctx;
     ctx.fp = fp;
     ctx.lattice = tile.lattice;
+    ctx.tile = &tile;
     ctx.record_no = 0;
     ctx.seed_tile = tile.base;
 
