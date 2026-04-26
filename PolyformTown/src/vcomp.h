@@ -21,6 +21,10 @@ typedef void (*VCompTraceEmitFn)(const Poly *p,
 int build_boundary_vertices(const Poly *p, Coord *verts);
 int poly_has_live_boundary(const Poly *p, const Tile *tile);
 int poly_has_live_boundary_local(const Poly *p, const Tile *tile);
+int poly_has_live_boundary_local_hidden(const Poly *p,
+                                        const Tile *tile,
+                                        const Coord *hidden,
+                                        int hidden_count);
 void enumerate_vertex_completions(const Poly *base,
                                   const Tile *tile,
                                   Coord target,

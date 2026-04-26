@@ -198,7 +198,9 @@ static void collect_emit(const Poly *p,
     for (int i = 0; i < hidden_count; i++) s.hidden[i] = hidden[i];
     qsort(s.hidden, s.hidden_count, sizeof(Coord), coord_cmp);
     poly_hash_key_lattice(p, ctx->lattice, &key);
-    if (ctx->live_only && !poly_has_live_boundary_local(&key, ctx->tile)) {
+    if (ctx->live_only &&
+        !poly_has_live_boundary_local_hidden(p, ctx->tile,
+                                             s.hidden, s.hidden_count)) {
         return;
     }
     h = state_hash64(&s, &key);

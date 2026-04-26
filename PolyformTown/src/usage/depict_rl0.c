@@ -259,15 +259,25 @@ static int parse_args(int argc, char **argv, Options *opt) {
             continue;
         }
         if (strcmp(argv[i], "--valence") == 0 && i + 1 < argc) {
-            int v = parse_limit(argv[++i]);
-            if (v < 0 || opt->valence_count >= 16) return 0;
-            opt->valences[opt->valence_count++] = v;
+            int added = 0;
+            while (i + 1 < argc && strncmp(argv[i + 1], "--", 2) != 0) {
+                int v = parse_limit(argv[++i]);
+                if (v < 0 || opt->valence_count >= 16) return 0;
+                opt->valences[opt->valence_count++] = v;
+                added = 1;
+            }
+            if (!added) return 0;
             continue;
         }
         if (strcmp(argv[i], "--tile-count") == 0 && i + 1 < argc) {
-            int n = parse_limit(argv[++i]);
-            if (n < 0 || opt->tile_count_count >= 32) return 0;
-            opt->tile_counts[opt->tile_count_count++] = n;
+            int added = 0;
+            while (i + 1 < argc && strncmp(argv[i + 1], "--", 2) != 0) {
+                int n = parse_limit(argv[++i]);
+                if (n < 0 || opt->tile_count_count >= 32) return 0;
+                opt->tile_counts[opt->tile_count_count++] = n;
+                added = 1;
+            }
+            if (!added) return 0;
             continue;
         }
         if (strcmp(argv[i], "--grouped") == 0) {

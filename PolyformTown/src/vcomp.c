@@ -93,11 +93,21 @@ int poly_has_live_boundary(const Poly *p, const Tile *tile) {
 }
 
 int poly_has_live_boundary_local(const Poly *p, const Tile *tile) {
+    return poly_has_live_boundary_local_hidden(p, tile, NULL, 0);
+}
+
+int poly_has_live_boundary_local_hidden(const Poly *p,
+                                        const Tile *tile,
+                                        const Coord *hidden,
+                                        int hidden_count) {
     Coord verts[2 * MAX_BOUNDARY_VERTS];
     int vc = build_frontier_vertices(p, verts);
     if (vc < 0 || vc > 2 * MAX_BOUNDARY_VERTS) return 0;
     for (int i = 0; i < vc; i++) {
-        if (!has_vertex_completion_local(p, tile, verts[i], NULL, 0)) {
+        if (!has_vertex_completion_local(p, tile,
+                                         verts[i],
+                                         hidden,
+                                         hidden_count)) {
             return 0;
         }
     }

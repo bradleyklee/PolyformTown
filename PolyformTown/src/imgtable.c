@@ -604,6 +604,8 @@ static int cycle_relation_det_sign(const Shape *ref, const Shape *cand) {
     }
     if (rk >= n) return 0;
 
+    int found_pos = 0;
+    int found_neg = 0;
     for (int j = 0; j < n; j++) {
         for (int dir = -1; dir <= 1; dir += 2) {
             int j0 = j;
@@ -625,11 +627,14 @@ static int cycle_relation_det_sign(const Shape *ref, const Shape *cand) {
             }
             if (ok) {
                 double det = a.a11 * a.a22 - a.a12 * a.a21;
-                if (det > 1e-9) return +1;
-                if (det < -1e-9) return -1;
+                if (det > 1e-9) found_pos = 1;
+                if (det < -1e-9) found_neg = 1;
+                if (found_pos && found_neg) return 0;
             }
         }
     }
+    if (found_pos) return +1;
+    if (found_neg) return -1;
     return 0;
 }
 

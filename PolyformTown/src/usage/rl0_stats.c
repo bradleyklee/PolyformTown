@@ -143,12 +143,14 @@ static void apply_record(Stats *s, const RL0Record *r, const Tile *tile) {
 
 int main(int argc, char **argv) {
     const char *data_path = "levelData/rl0/completions.dat";
+    const char *tile_path = "tiles/hat.tile";
 
     if (argc > 1) data_path = argv[1];
+    if (argc > 2) tile_path = argv[2];
 
     Tile tile;
-    if (!tile_load("tiles/hat.tile", &tile)) {
-        fprintf(stderr, "failed to load tile: %s\n", "tiles/hat.tile");
+    if (!tile_load(tile_path, &tile)) {
+        fprintf(stderr, "failed to load tile: %s\n", tile_path);
         return 1;
     }
 
