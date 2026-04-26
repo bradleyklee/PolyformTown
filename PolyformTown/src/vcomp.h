@@ -13,6 +13,9 @@ typedef void (*VCompTraceEmitFn)(const Poly *p,
                                  int hidden_count,
                                  const Cycle *added_tiles,
                                  int added_tile_count,
+                                 /* index in each aligned tile cycle where
+                                  * the cycle vertex equals target */
+                                 const int *added_indices,
                                  void *userdata);
 
 int build_boundary_vertices(const Poly *p, Coord *verts);

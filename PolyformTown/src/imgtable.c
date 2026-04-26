@@ -36,6 +36,8 @@ typedef struct {
     Shape *tiles;
     int tile_count;
     int tile_cap;
+    int has_center;
+    VPoint center;
 } GroupShape;
 
 typedef enum {
@@ -462,7 +464,7 @@ static int read_group_shapes(GroupShape **groups_io, int *group_cap_io,
                              const char *first_line) {
     char line[MAX_LINE];
     int count = 0;
-    int section = 0; /* 1 aggregate, 2 tiles */
+    int section = 0; /* 1 aggregate, 2 tiles, 3 center */
     int cur = -1;
     GroupShape *groups = *groups_io;
     const char *pending = first_line;
@@ -495,7 +497,37 @@ static int read_group_shapes(GroupShape **groups_io, int *group_cap_io,
             section = 2;
             continue;
         }
+        if (strncmp(p, "Center", 6) == 0) {
+            section = 3;
+            continue;
+        }
         if (cur < 0) continue;
+        if (section == 3) {
+            const char *q = p;
+            int v, x, y;
+            skip_ws(&q);
+            if (*q == '(') {
+                q++;
+                if (parse_int(&q, &v) &&
+                    expect_char(&q, ',') &&
+                    parse_int(&q, &x) &&
+                    expect_char(&q, ',') &&
+                    parse_int(&q, &y)) {
+                    groups[cur].has_center = 1;
+                    groups[cur].center.v = v;
+                    groups[cur].center.x = x;
+                    groups[cur].center.y = y;
+                }
+            } else if (parse_int(&q, &v) &&
+                       parse_int(&q, &x) &&
+                       parse_int(&q, &y)) {
+                groups[cur].has_center = 1;
+                groups[cur].center.v = v;
+                groups[cur].center.x = x;
+                groups[cur].center.y = y;
+            }
+            continue;
+        }
         Shape s;
         if (!parse_shape_line(p, &s)) continue;
         if (section == 1 && !groups[cur].aggregate) {
@@ -744,6 +776,15 @@ static void emit_group_svg(FILE *fp, const GroupShape *g,
         }
         if (c == CHIRALITY_REFLECTED) fill = "#bcd0e2";
         emit_shape_path(fp, &g->tiles[i], tx, ty, scale, fill, "#666666", 0.8);
+    }
+    if (g->has_center) {
+        DPoint c = vertex_to_xy(g->aggregate, g->center);
+        double cx = tx + scale * c.x;
+        double cy = ty - scale * c.y;
+        fprintf(fp,
+                "<circle cx=\"%.3f\" cy=\"%.3f\" r=\"2.8\" "
+                "fill=\"#d60000\" stroke=\"white\" stroke-width=\"0.8\"/>\n",
+                cx, cy);
     }
 }
 
