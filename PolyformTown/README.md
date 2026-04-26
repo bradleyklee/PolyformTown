@@ -189,14 +189,6 @@ Quick build for the full default RL0 SVG:
 make rl0_svg
 ```
 
-### rl0_stats
-
-Compare full RL0 totals against live-boundary-pruned totals:
-
-```bash
-./rl0_stats [completions_path] [tile_path]
-```
-
 ## QC / smoke test
 
 Run the project smoke test with:

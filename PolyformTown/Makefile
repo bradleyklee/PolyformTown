@@ -6,7 +6,7 @@ CORE = $(SRC)/cycle.o $(SRC)/tile.o $(SRC)/hash.o $(SRC)/vec.o $(SRC)/attach.o $
 POLY_CORE = $(CORE) $(SRC)/vcomp.o $(SRC)/poly_pipeline.o
 VCOMP_CORE = $(CORE) $(SRC)/vcomp.o $(SRC)/vcomp_pipeline.o
 
-all: poly_count poly_print vcomp_count vcomp_print imgtable tile_to_imgtable rl0_generate rl0_depict rl0_stats
+all: poly_count poly_print vcomp_count vcomp_print imgtable tile_to_imgtable rl0_generate rl0_depict rl0_data
 
 poly_count: $(SRC)/count_poly.o $(POLY_CORE)
 	$(CC) $(CFLAGS) -o $@ $(SRC)/count_poly.o $(POLY_CORE)
@@ -18,7 +18,7 @@ $(SRC)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) -I$(SRC) -c $< -o $@
 
 clean:
-	rm -f $(SRC)/*.o $(SRC)/rl0/*.o $(SRC)/usage/*.o poly_count poly_print vcomp_count count_vcomp vcomp_print imgtable tile_to_imgtable rl0_generate rl0_depict rl0_stats
+	rm -f $(SRC)/*.o $(SRC)/rl0/*.o $(SRC)/usage/*.o poly_count poly_print vcomp_count count_vcomp vcomp_print imgtable tile_to_imgtable rl0_generate rl0_depict
 
 vcomp_count: $(SRC)/count_vcomp.o $(VCOMP_CORE)
 	$(CC) $(CFLAGS) -o $@ $(SRC)/count_vcomp.o $(VCOMP_CORE)
