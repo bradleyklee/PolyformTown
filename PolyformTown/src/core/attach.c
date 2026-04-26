@@ -1,8 +1,8 @@
-#include "attach.h"
+#include "core/attach.h"
 #include <string.h>
 #include <math.h>
-#include "lattice.h"
-#include "tetrille.h"
+#include "core/lattice.h"
+#include "core/tetrille.h"
 
 #define MAX_EDGES (MAX_VERTS)
 #define MAX_LOCAL (4 * MAX_VERTS)

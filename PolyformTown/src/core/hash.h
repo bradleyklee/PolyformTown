@@ -1,7 +1,7 @@
 #ifndef HASH_H
 #define HASH_H
 
-#include "cycle.h"
+#include "core/cycle.h"
 #include <stddef.h>
 
 typedef struct {

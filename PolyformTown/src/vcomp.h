@@ -1,8 +1,8 @@
 #ifndef VCOMP_H
 #define VCOMP_H
 
-#include "cycle.h"
-#include "tile.h"
+#include "core/cycle.h"
+#include "core/tile.h"
 
 typedef void (*VCompEmitFn)(const Poly *p,
                             const Coord *hidden,
@@ -18,13 +18,6 @@ typedef void (*VCompTraceEmitFn)(const Poly *p,
                                  const int *added_indices,
                                  void *userdata);
 
-int build_boundary_vertices(const Poly *p, Coord *verts);
-int poly_has_live_boundary(const Poly *p, const Tile *tile);
-int poly_has_live_boundary_local(const Poly *p, const Tile *tile);
-int poly_has_live_boundary_local_hidden(const Poly *p,
-                                        const Tile *tile,
-                                        const Coord *hidden,
-                                        int hidden_count);
 void enumerate_vertex_completions(const Poly *base,
                                   const Tile *tile,
                                   Coord target,

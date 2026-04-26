@@ -1,7 +1,7 @@
-#include "cycle.h"
-#include "tile.h"
-#include "lattice.h"
-#include "tetrille.h"
+#include "core/cycle.h"
+#include "core/tile.h"
+#include "core/lattice.h"
+#include "core/tetrille.h"
 #include <stdio.h>
 
 static void tetrille_embed6_scaled(Coord p, long long *sx, long long *sy) {

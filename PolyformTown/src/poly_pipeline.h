@@ -1,8 +1,8 @@
 #ifndef POLY_PIPELINE_H
 #define POLY_PIPELINE_H
 
-#include "tile.h"
-#include "vec.h"
+#include "core/tile.h"
+#include "core/vec.h"
 
 typedef int (*PolyLevelFn)(int level,
                            const PolyVec *cur,

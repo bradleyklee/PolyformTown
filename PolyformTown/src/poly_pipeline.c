@@ -1,9 +1,9 @@
 #include "poly_pipeline.h"
 
-#include "attach.h"
-#include "cycle.h"
-#include "hash.h"
-#include "vcomp.h"
+#include "core/attach.h"
+#include "core/boundary.h"
+#include "core/cycle.h"
+#include "core/hash.h"
 
 void run_poly_levels(const Tile *tile,
                      int max_n,
@@ -48,7 +48,7 @@ void run_poly_levels(const Tile *tile,
                                               tile->lattice,
                                               &canon);
                         if (live_only &&
-                            !poly_has_live_boundary_local(&canon, tile)) {
+                            !poly_has_live_boundary(&canon, tile)) {
                             continue;
                         }
                         if (hash_insert(&seen, &canon)) vec_push(&next, &canon);

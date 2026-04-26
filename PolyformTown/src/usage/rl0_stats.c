@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cycle.h"
-#include "tile.h"
-#include "vcomp.h"
+#include "core/cycle.h"
+#include "core/attach.h"
+#include "core/boundary.h"
+#include "core/tile.h"
 
 typedef struct {
     int have_valence;
@@ -125,7 +126,7 @@ static void apply_record(Stats *s, const RL0Record *r, const Tile *tile) {
     int live;
     if (!r->have_boundary) return;
 
-    live = poly_has_live_boundary_local(&r->boundary, tile);
+    live = poly_has_live_boundary(&r->boundary, tile);
 
     s->total++;
     if (live) s->live++; else s->dead++;

@@ -1,7 +1,7 @@
 #ifndef VCOMP_PIPELINE_H
 #define VCOMP_PIPELINE_H
 
-#include "tile.h"
+#include "core/tile.h"
 
 #define VCOMP_MAX_LEVELS 32
 #define VCOMP_MAX_HIDDEN (MAX_VERTS * MAX_CYCLES)

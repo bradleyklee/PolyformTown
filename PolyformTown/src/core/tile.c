@@ -1,5 +1,5 @@
-#include "tile.h"
-#include "lattice.h"
+#include "core/tile.h"
+#include "core/lattice.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

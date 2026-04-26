@@ -1,8 +1,8 @@
 #ifndef TETRILLE_H
 #define TETRILLE_H
 
-#include "cycle.h"
-#include "tile.h"
+#include "core/cycle.h"
+#include "core/tile.h"
 
 int tetrille_point_to_sys3_scaled(Coord p, int *x, int *y);
 int tetrille_point_to_sys4(Coord p, int *x, int *y);
