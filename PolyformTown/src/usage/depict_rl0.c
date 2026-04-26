@@ -4,7 +4,9 @@
 #include <string.h>
 
 #include "cycle.h"
+#include "hash.h"
 #include "tile.h"
+#include "vcomp.h"
 
 #define MAX_TILES_PER_RECORD MAX_VERTS
 
@@ -20,6 +22,9 @@ typedef struct {
     int have_tiles;
     int tile_count_list;
     Cycle tiles[MAX_TILES_PER_RECORD];
+    int have_indices;
+    int index_count;
+    int indices[MAX_TILES_PER_RECORD];
 } RL0Record;
 
 typedef struct {
@@ -30,6 +35,7 @@ typedef struct {
     int tile_counts[32];
     int tile_count_count;
     int grouped;
+    int live_only;
 } Options;
 
 static void skip_ws(const char **pp) {
@@ -163,6 +169,40 @@ static int parse_center(const char *text, Coord *center) {
     return *p == '\0' || *p == '\n' || *p == '\r';
 }
 
+static int parse_int_list(const char *text, int *out, int *out_count) {
+    const char *p = text;
+    int count = 0;
+
+    if (!expect_char(&p, '[')) return 0;
+    skip_ws(&p);
+    if (*p == ']') {
+        p++;
+        *out_count = 0;
+        return 1;
+    }
+
+    while (count < MAX_TILES_PER_RECORD) {
+        if (!parse_int(&p, &out[count])) return 0;
+        count++;
+
+        skip_ws(&p);
+        if (*p == ',') {
+            p++;
+            continue;
+        }
+        if (*p == ']') {
+            p++;
+            skip_ws(&p);
+            if (*p != '\0' && *p != '\n' && *p != '\r') return 0;
+            *out_count = count;
+            return 1;
+        }
+        return 0;
+    }
+
+    return 0;
+}
+
 static void reset_record(RL0Record *r) {
     memset(r, 0, sizeof(*r));
 }
@@ -174,7 +214,9 @@ static int parse_int_line(const char *line, const char *prefix, int *out) {
     return parse_int(&p, out);
 }
 
-static int record_matches(const RL0Record *r, const Options *opt) {
+static int record_matches(const RL0Record *r,
+                          const Options *opt,
+                          const Tile *tile) {
     int ok = 0;
     if (!r->have_boundary) return 0;
     if (opt->valence_count > 0) {
@@ -198,6 +240,9 @@ static int record_matches(const RL0Record *r, const Options *opt) {
             }
         }
         if (!ok) return 0;
+    }
+    if (opt->live_only && !poly_has_live_boundary_local(&r->boundary, tile)) {
+        return 0;
     }
     return 1;
 }
@@ -238,7 +283,7 @@ static void usage(const char *prog) {
     fprintf(stderr,
             "usage: %s [--data FILE] [--limit N] "
             "[--valence V [V...]] [--tile-count N [N...]] "
-            "[--grouped]\n",
+            "[--grouped] [--live-only]\n",
             prog);
 }
 
@@ -248,6 +293,7 @@ static int parse_args(int argc, char **argv, Options *opt) {
     opt->valence_count = 0;
     opt->tile_count_count = 0;
     opt->grouped = 0;
+    opt->live_only = 0;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--data") == 0 && i + 1 < argc) {
@@ -285,6 +331,10 @@ static int parse_args(int argc, char **argv, Options *opt) {
             opt->grouped = 1;
             continue;
         }
+        if (strcmp(argv[i], "--live-only") == 0) {
+            opt->live_only = 1;
+            continue;
+        }
         return 0;
     }
 
@@ -311,14 +361,17 @@ int main(int argc, char **argv) {
     }
 
     RL0Record rec;
+    HashTable seen;
     reset_record(&rec);
+    hash_init(&seen, 1u << 17);
 
     char line[262144];
     int emitted = 0;
     int record_index = 0;
     while (fgets(line, sizeof(line), fp)) {
         if (strncmp(line, "---[", 4) == 0) {
-            if (record_matches(&rec, &opt)) {
+            if (record_matches(&rec, &opt, &tile) &&
+                hash_insert(&seen, &rec.boundary)) {
                 record_index++;
                 emit_record(&rec, &tile, opt.grouped, record_index);
                 emitted++;
@@ -350,13 +403,30 @@ int main(int argc, char **argv) {
                                              &rec.tile_count_list);
             continue;
         }
+        if (strncmp(line, "indices:", 8) == 0) {
+            rec.have_indices = parse_int_list(line + 8,
+                                              rec.indices,
+                                              &rec.index_count);
+            if (rec.have_indices && rec.have_tiles &&
+                rec.index_count == rec.tile_count_list &&
+                rec.index_count > 0 &&
+                rec.indices[0] >= 0 &&
+                rec.indices[0] < rec.tiles[0].n) {
+                rec.center = rec.tiles[0].v[rec.indices[0]];
+                rec.have_center = 1;
+            }
+            continue;
+        }
     }
 
-    if ((opt.limit == 0 || emitted < opt.limit) && record_matches(&rec, &opt)) {
+    if ((opt.limit == 0 || emitted < opt.limit) &&
+        record_matches(&rec, &opt, &tile) &&
+        hash_insert(&seen, &rec.boundary)) {
         record_index++;
         emit_record(&rec, &tile, opt.grouped, record_index);
     }
 
+    hash_destroy(&seen);
     fclose(fp);
     return 0;
 }

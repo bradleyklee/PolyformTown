@@ -170,12 +170,18 @@ DATA=levelData/rl0/completions.dat
 ./rl0_depict --data "$DATA" \
   --valence 3 6 --tile-count 3 4 \
   --grouped | ./imgtable > rl0_v36_n34.svg
+./rl0_depict --data "$DATA" \
+  --valence 3 6 --tile-count 3 \
+  --grouped --live-only | ./imgtable > rl0_live.svg
 ```
 
 `--valence` and `--tile-count` accept one or more values per flag,
 and flags can be repeated.
 
 `--grouped` emits aggregate + inlaid tiles and center vertex disks.
+`--live-only` keeps only completions with live boundaries.
+
+`rl0_depict` deduplicates by canonical boundary before emission.
 
 Quick build for the full default RL0 SVG:
 
