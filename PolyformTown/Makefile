@@ -46,3 +46,10 @@ rl0_stats: $(SRC)/usage/rl0_stats.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/tetrille
 
 test: all
 	./tests/smoke.sh
+
+
+rl0_data: rl0_generate
+	./rl0_generate tiles/hat.tile levelData/rl0/completions.dat
+
+rl0_svg: rl0_data rl0_depict imgtable
+	./rl0_depict --data levelData/rl0/completions.dat | ./imgtable > levelData/rl0/rl0_all.svg
