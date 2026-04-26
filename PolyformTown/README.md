@@ -173,7 +173,7 @@ DATA=levelData/rl0/completions.dat
 Compare full RL0 totals against live-boundary-pruned totals:
 
 ```bash
-./rl0_stats [completions_path]
+./rl0_stats [completions_path] [tile_path]
 ```
 
 ## QC / smoke test

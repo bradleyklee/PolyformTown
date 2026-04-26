@@ -221,6 +221,28 @@ static int cycle_vertex_index(const Cycle *c, Coord q) {
     return -1;
 }
 
+static Coord canonical_center_from_tiles(const Cycle *tiles,
+                                         const int *indices,
+                                         int tile_count,
+                                         Coord fallback) {
+    Coord center = fallback;
+    int have_center = 0;
+
+    for (int i = 0; i < tile_count; i++) {
+        int idx = indices[i];
+        if (idx < 0 || idx >= tiles[i].n) continue;
+        Coord q = tiles[i].v[idx];
+        if (!have_center) {
+            center = q;
+            have_center = 1;
+            continue;
+        }
+        if (!coord_eq(center, q)) return fallback;
+    }
+
+    return center;
+}
+
 static void emit_completion(const Poly *p,
                             const Coord *hidden,
                             int hidden_count,
@@ -254,6 +276,10 @@ static void emit_completion(const Poly *p,
                                        &canonical,
                                        canonical_tiles,
                                        canonical_indices);
+    Coord center = canonical_center_from_tiles(canonical_tiles,
+                                               canonical_indices,
+                                               total_tile_count,
+                                               ctx->target);
 
     int valence = lattice_direction_count(ctx->lattice);
     if (ctx->lattice == TILE_LATTICE_TETRILLE &&
@@ -266,7 +292,7 @@ static void emit_completion(const Poly *p,
     fprintf(ctx->fp, "valence:%d\n", valence);
     fprintf(ctx->fp, "tile_count:%d\n", total_tile_count);
     fprintf(ctx->fp, "center:(%d,%d,%d)\n",
-            ctx->target.v, ctx->target.x, ctx->target.y);
+            center.v, center.x, center.y);
     fprintf(ctx->fp, "canonical_boundary:");
     print_poly(ctx->fp, &canonical);
     fprintf(ctx->fp, "\n");
