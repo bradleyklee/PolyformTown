@@ -259,12 +259,10 @@ static void emit_completion(const Poly *p,
     int all_indices[RL0_MAX_TRACE];
     int total_tile_count = added_tile_count + 1;
 
-    if (!poly_has_live_boundary_local_hidden(p,
-                                             ctx->tile,
-                                             hidden,
-                                             hidden_count)) {
-        return;
-    }
+    (void)hidden;
+    (void)hidden_count;
+
+    if (!poly_has_live_boundary_local(p, ctx->tile)) return;
 
     all_tiles[0] = ctx->seed_tile;
     all_indices[0] = cycle_vertex_index(&ctx->seed_tile, ctx->target);
