@@ -181,7 +181,8 @@ and flags can be repeated.
 `--grouped` emits aggregate + inlaid tiles and center vertex disks.
 `--live-only` keeps only completions with live boundaries.
 
-`rl0_depict` deduplicates by canonical boundary before emission.
+`rl0_depict` deduplicates by
+`(valence, tile_count, canonical_boundary)` before emission.
 
 Quick build for the full default RL0 SVG:
 

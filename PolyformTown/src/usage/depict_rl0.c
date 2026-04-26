@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "cycle.h"
-#include "hash.h"
 #include "tile.h"
 #include "vcomp.h"
 
@@ -37,6 +36,18 @@ typedef struct {
     int grouped;
     int live_only;
 } Options;
+
+typedef struct {
+    int valence;
+    int tile_count;
+    Poly boundary;
+} SeenKey;
+
+typedef struct {
+    SeenKey *items;
+    int count;
+    int cap;
+} SeenSet;
 
 static void skip_ws(const char **pp) {
     while (isspace((unsigned char)**pp)) (*pp)++;
@@ -207,6 +218,39 @@ static void reset_record(RL0Record *r) {
     memset(r, 0, sizeof(*r));
 }
 
+static int poly_equal_local(const Poly *a, const Poly *b) {
+    return !poly_less(a, b) && !poly_less(b, a);
+}
+
+static int seen_insert(SeenSet *set,
+                       int valence,
+                       int tile_count,
+                       const Poly *boundary) {
+    for (int i = 0; i < set->count; i++) {
+        const SeenKey *k = &set->items[i];
+        if (k->valence != valence) continue;
+        if (k->tile_count != tile_count) continue;
+        if (poly_equal_local(&k->boundary, boundary)) return 0;
+    }
+
+    if (set->count >= set->cap) {
+        int next_cap = (set->cap == 0) ? 64 : (2 * set->cap);
+        SeenKey *next = realloc(set->items, (size_t)next_cap * sizeof(SeenKey));
+        if (!next) {
+            fprintf(stderr, "out of memory while deduplicating records\n");
+            exit(1);
+        }
+        set->items = next;
+        set->cap = next_cap;
+    }
+
+    set->items[set->count].valence = valence;
+    set->items[set->count].tile_count = tile_count;
+    set->items[set->count].boundary = *boundary;
+    set->count++;
+    return 1;
+}
+
 static int parse_int_line(const char *line, const char *prefix, int *out) {
     size_t n = strlen(prefix);
     if (strncmp(line, prefix, n) != 0) return 0;
@@ -361,9 +405,8 @@ int main(int argc, char **argv) {
     }
 
     RL0Record rec;
-    HashTable seen;
+    SeenSet seen = {0};
     reset_record(&rec);
-    hash_init(&seen, 1u << 17);
 
     char line[262144];
     int emitted = 0;
@@ -371,7 +414,10 @@ int main(int argc, char **argv) {
     while (fgets(line, sizeof(line), fp)) {
         if (strncmp(line, "---[", 4) == 0) {
             if (record_matches(&rec, &opt, &tile) &&
-                hash_insert(&seen, &rec.boundary)) {
+                seen_insert(&seen,
+                            rec.valence,
+                            rec.tile_count,
+                            &rec.boundary)) {
                 record_index++;
                 emit_record(&rec, &tile, opt.grouped, record_index);
                 emitted++;
@@ -421,12 +467,15 @@ int main(int argc, char **argv) {
 
     if ((opt.limit == 0 || emitted < opt.limit) &&
         record_matches(&rec, &opt, &tile) &&
-        hash_insert(&seen, &rec.boundary)) {
+        seen_insert(&seen,
+                    rec.valence,
+                    rec.tile_count,
+                    &rec.boundary)) {
         record_index++;
         emit_record(&rec, &tile, opt.grouped, record_index);
     }
 
-    hash_destroy(&seen);
+    free(seen.items);
     fclose(fp);
     return 0;
 }
