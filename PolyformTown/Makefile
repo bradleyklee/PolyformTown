@@ -38,8 +38,8 @@ tile_to_imgtable: $(SRC)/tile_to_imgtable.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/
 rl0_generate: $(SRC)/rl0/generate_rl0.o $(VCOMP_CORE)
 	$(CC) $(CFLAGS) -o $@ $(SRC)/rl0/generate_rl0.o $(VCOMP_CORE)
 
-rl0_depict: $(SRC)/usage/depict_rl0.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/tetrille.o $(SRC)/lattice.o
-	$(CC) $(CFLAGS) -o $@ $(SRC)/usage/depict_rl0.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/tetrille.o $(SRC)/lattice.o
+rl0_depict: $(SRC)/usage/depict_rl0.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/tetrille.o $(SRC)/lattice.o $(SRC)/hash.o $(SRC)/vcomp.o $(SRC)/attach.o
+	$(CC) $(CFLAGS) -o $@ $(SRC)/usage/depict_rl0.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/tetrille.o $(SRC)/lattice.o $(SRC)/hash.o $(SRC)/vcomp.o $(SRC)/attach.o
 
 rl0_stats: $(SRC)/usage/rl0_stats.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/tetrille.o $(SRC)/lattice.o $(SRC)/vcomp.o $(SRC)/attach.o
 	$(CC) $(CFLAGS) -o $@ $(SRC)/usage/rl0_stats.o $(SRC)/tile.o $(SRC)/cycle.o $(SRC)/tetrille.o $(SRC)/lattice.o $(SRC)/vcomp.o $(SRC)/attach.o
