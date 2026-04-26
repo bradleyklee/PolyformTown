@@ -237,7 +237,8 @@ static int parse_limit(const char *s) {
 static void usage(const char *prog) {
     fprintf(stderr,
             "usage: %s [--data FILE] [--limit N] "
-            "[--valence V] [--tile-count N] [--grouped]\n",
+            "[--valence V [V...]] [--tile-count N [N...]] "
+            "[--grouped]\n",
             prog);
 }
 

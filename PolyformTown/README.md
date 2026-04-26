@@ -136,6 +136,12 @@ Records are emitted as multi-line blocks delimited by `---[N]---`.
 ./rl0_generate [tilefile] [output_path]
 ```
 
+Quick refresh using defaults:
+
+```bash
+make rl0_data
+```
+
 ### rl0_depict
 
 Convert RL0 records to `imgtable` input.
@@ -162,11 +168,20 @@ DATA=levelData/rl0/completions.dat
 ./rl0_depict --data "$DATA" \
   --valence 6 --tile-count 3 --grouped | ./imgtable > rl0_v6_n3.svg
 ./rl0_depict --data "$DATA" \
-  --valence 3 --valence 6 --tile-count 3 --tile-count 4 \
+  --valence 3 6 --tile-count 3 4 \
   --grouped | ./imgtable > rl0_v36_n34.svg
 ```
 
+`--valence` and `--tile-count` accept one or more values per flag,
+and flags can be repeated.
+
 `--grouped` emits aggregate + inlaid tiles and center vertex disks.
+
+Quick build for the full default RL0 SVG:
+
+```bash
+make rl0_svg
+```
 
 ### rl0_stats
 
