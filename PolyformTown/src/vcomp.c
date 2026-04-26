@@ -157,6 +157,7 @@ static void dfs_vertex_completions(const Poly *p,
                                    int prev_boundary_count,
                                    int completion_steps,
                                    Cycle *trace_tiles,
+                                   int *trace_indices,
                                    int trace_tile_count) {
     if (ctx->stop_after_first && *ctx->stop_flag) return;
     if (ctx->max_steps >= 0 && completion_steps >= ctx->max_steps) return;
@@ -190,12 +191,22 @@ static void dfs_vertex_completions(const Poly *p,
                             completion_steps + 1 == ctx->required_steps) {
                             if (ctx->trace_emit) {
                                 Cycle out_tiles[MAX_VERTS + 1];
+                                int out_indices[MAX_VERTS + 1];
                                 for (int ti = 0; ti < trace_tile_count; ti++) {
                                     out_tiles[ti] = trace_tiles[ti];
+                                    out_indices[ti] = trace_indices[ti];
                                 }
                                 out_tiles[trace_tile_count] = aligned;
+                                out_indices[trace_tile_count] = -1;
+                                for (int vi = 0; vi < aligned.n; vi++) {
+                                    if (coord_eq(aligned.v[vi], ctx->target)) {
+                                        out_indices[trace_tile_count] = vi;
+                                        break;
+                                    }
+                                }
                                 ctx->trace_emit(&grown, next_hidden, next_hidden_count,
                                                 out_tiles, trace_tile_count + 1,
+                                                out_indices,
                                                 ctx->userdata);
                             } else {
                                 ctx->emit(&grown, next_hidden, next_hidden_count,
@@ -212,18 +223,27 @@ static void dfs_vertex_completions(const Poly *p,
                 if (ctx->trace_emit) {
                     if (trace_tile_count < MAX_VERTS) {
                         trace_tiles[trace_tile_count] = aligned;
+                        trace_indices[trace_tile_count] = -1;
+                        for (int vi = 0; vi < aligned.n; vi++) {
+                            if (coord_eq(aligned.v[vi], ctx->target)) {
+                                trace_indices[trace_tile_count] = vi;
+                                break;
+                            }
+                        }
                         dfs_vertex_completions(&grown, ctx,
                                                next_hidden, next_hidden_count,
                                                grown_boundary, grown_boundary_count,
                                                completion_steps + 1,
-                                               trace_tiles, trace_tile_count + 1);
+                                               trace_tiles, trace_indices,
+                                               trace_tile_count + 1);
                     }
                 } else {
                     dfs_vertex_completions(&grown, ctx,
                                            next_hidden, next_hidden_count,
                                            grown_boundary, grown_boundary_count,
                                            completion_steps + 1,
-                                           trace_tiles, trace_tile_count);
+                                           trace_tiles, trace_indices,
+                                           trace_tile_count);
                 }
             }
         }
@@ -241,6 +261,7 @@ void enumerate_vertex_completions_steps(const Poly *base,
     VCompCtx ctx;
     Coord initial_boundary[MAX_BOUNDARY_VERTS];
     Cycle trace_tiles[MAX_VERTS];
+    int trace_indices[MAX_VERTS];
     int stop = 0;
     memset(&ctx, 0, sizeof(ctx));
     ctx.tile = tile;
@@ -259,7 +280,7 @@ void enumerate_vertex_completions_steps(const Poly *base,
     int initial_boundary_count = build_boundary_vertices(base, initial_boundary);
     dfs_vertex_completions(base, &ctx, initial_hidden, initial_hidden_count,
                            initial_boundary, initial_boundary_count, 0,
-                           trace_tiles, 0);
+                           trace_tiles, trace_indices, 0);
 }
 
 void enumerate_vertex_completions_steps_trace(const Poly *base,
@@ -273,6 +294,7 @@ void enumerate_vertex_completions_steps_trace(const Poly *base,
     VCompCtx ctx;
     Coord initial_boundary[MAX_BOUNDARY_VERTS];
     Cycle trace_tiles[MAX_VERTS];
+    int trace_indices[MAX_VERTS];
     int stop = 0;
     memset(&ctx, 0, sizeof(ctx));
     ctx.tile = tile;
@@ -291,7 +313,7 @@ void enumerate_vertex_completions_steps_trace(const Poly *base,
     int initial_boundary_count = build_boundary_vertices(base, initial_boundary);
     dfs_vertex_completions(base, &ctx, initial_hidden, initial_hidden_count,
                            initial_boundary, initial_boundary_count, 0,
-                           trace_tiles, 0);
+                           trace_tiles, trace_indices, 0);
 }
 
 void enumerate_vertex_completions_mode(const Poly *base,
@@ -330,6 +352,7 @@ int has_vertex_completion_steps(const Poly *base,
     VCompCtx ctx;
     Coord initial_boundary[MAX_BOUNDARY_VERTS];
     Cycle trace_tiles[MAX_VERTS];
+    int trace_indices[MAX_VERTS];
     ProbeCtx probe;
     memset(&ctx, 0, sizeof(ctx));
     memset(&probe, 0, sizeof(probe));
@@ -349,7 +372,7 @@ int has_vertex_completion_steps(const Poly *base,
     int initial_boundary_count = build_boundary_vertices(base, initial_boundary);
     dfs_vertex_completions(base, &ctx, initial_hidden, initial_hidden_count,
                            initial_boundary, initial_boundary_count, 0,
-                           trace_tiles, 0);
+                           trace_tiles, trace_indices, 0);
     return probe.found;
 }
 
@@ -379,6 +402,7 @@ static int has_vertex_completion_bounded(const Poly *base,
     VCompCtx ctx;
     Coord initial_boundary[MAX_BOUNDARY_VERTS];
     Cycle trace_tiles[MAX_VERTS];
+    int trace_indices[MAX_VERTS];
     ProbeCtx probe;
     memset(&ctx, 0, sizeof(ctx));
     memset(&probe, 0, sizeof(probe));
@@ -398,7 +422,7 @@ static int has_vertex_completion_bounded(const Poly *base,
     int initial_boundary_count = build_boundary_vertices(base, initial_boundary);
     dfs_vertex_completions(base, &ctx, initial_hidden, initial_hidden_count,
                            initial_boundary, initial_boundary_count, 0,
-                           trace_tiles, 0);
+                           trace_tiles, trace_indices, 0);
     return probe.found;
 }
 

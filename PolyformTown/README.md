@@ -121,6 +121,61 @@ Print the canonical vertex-completion representatives at level `N`.
 ./vcomp_print N [tilefile] [--live-only]
 ```
 
+### rl0_generate
+
+Generate RL0 completion records and write them to
+`levelData/rl0/completions.dat`.
+Schema notes are stored in `levelData/rl0/completions.meta`.
+
+Each record has attributes:
+`valence`, `tile_count`, `canonical_boundary`, `tiles`, `indices`.
+`tile_count` includes the seed tile plus attached tiles.
+Records are emitted as multi-line blocks delimited by `---[N]---`.
+
+```bash
+./rl0_generate [tilefile] [output_path]
+```
+
+### rl0_depict
+
+Convert RL0 records to `imgtable` input.
+
+Then pipe to `imgtable` to build one SVG grid.
+
+```bash
+DATA=levelData/rl0/completions.dat
+./rl0_depict --data "$DATA" | \
+  ./imgtable > rl0.svg
+```
+
+Examples:
+
+```bash
+DATA=levelData/rl0/completions.dat
+./rl0_depict --data "$DATA" | \
+  ./imgtable > rl0_all.svg
+./rl0_depict --data "$DATA" \
+  --limit 144 | \
+  ./imgtable > rl0_16x9.svg
+./rl0_depict --data "$DATA" \
+  --valence 3 --tile-count 3 --grouped | ./imgtable > rl0_v3_n3.svg
+./rl0_depict --data "$DATA" \
+  --valence 6 --tile-count 3 --grouped | ./imgtable > rl0_v6_n3.svg
+./rl0_depict --data "$DATA" \
+  --valence 3 --valence 6 --tile-count 3 --tile-count 4 \
+  --grouped | ./imgtable > rl0_v36_n34.svg
+```
+
+`--grouped` emits aggregate + inlaid tiles and center vertex disks.
+
+### rl0_stats
+
+Compare full RL0 totals against live-boundary-pruned totals:
+
+```bash
+./rl0_stats [completions_path]
+```
+
 ## QC / smoke test
 
 Run the project smoke test with:
