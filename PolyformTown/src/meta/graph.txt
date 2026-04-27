@@ -1,0 +1,409 @@
+Found 147 functions
+
+--- core/vec.c (4) ---
+vec_clear (1)
+vec_destroy (1)
+vec_init (1)
+vec_push (1)
+
+--- core/hash.c (13) ---
+hash_destroy (1)
+hash_init (1)
+poly_equal (1)
+poly_hash (1)
+hash_resize (3)
+    core/hash.c poly_hash
+    core/hash.c hash_init
+hash_insert (6)
+    core/hash.c poly_equal
+    core/hash.c poly_hash
+    core/hash.c hash_resize
+
+--- core/lattice.c (15) ---
+lattice_direction_count (1)
+lattice_transform_count (1)
+lattice_unit_direction (1)
+lattice_embed_point (2)
+    core/tetrille.c tetrille_embed_point_scaled
+lattice_direction_index (4)
+    core/tetrille.c tetrille_edge_tag
+lattice_coords_adjacent (6)
+    core/lattice.c lattice_unit_direction
+    core/tetrille.c tetrille_coords_adjacent
+
+--- core/tetrille.c (15) ---
+is_unit6 (1)
+tetrille_delta_to_6 (1)
+tetrille_embed_point_scaled (1)
+tetrille_point_to_sys3_scaled (1)
+tetrille_point_to_sys4 (1)
+tetrille_translate_cycle (1)
+tetrille_point_on_segment (2)
+    core/tetrille.c tetrille_embed_point_scaled
+tetrille_edge_tag (3)
+    core/tetrille.c tetrille_point_to_sys4
+    core/tetrille.c tetrille_point_to_sys3_scaled
+tetrille_coords_adjacent (4)
+    core/tetrille.c tetrille_point_to_sys4
+    core/tetrille.c is_unit6
+    core/tetrille.c tetrille_point_to_sys3_scaled
+
+--- core/tile.c (79) ---
+print_imgtable_basis (1)
+print_imgtable_constants (1)
+print_imgtable_cycle_raw (1)
+starts_with_label (1)
+trim_in_place (1)
+copy_trimmed (2)
+    core/tile.c trim_in_place
+parse_basis_row (4)
+    core/tile.c trim_in_place
+    core/tile.c copy_trimmed
+tile_print_imgtable_shape (4)
+    core/tile.c print_imgtable_cycle_raw
+    core/tile.c print_imgtable_basis
+    core/tile.c print_imgtable_constants
+tile_print_imgtable_cycle (5)
+    core/tile.c tile_print_imgtable_shape
+tile_build_variants (23)
+    core/cycle.c cycle_less
+    core/cycle.c cycle_canonicalize_shift
+    core/cycle.c cycle_normalize_position
+    core/cycle.c cycle_reverse
+    core/cycle.c cycle_signed_area2
+    core/cycle.c cycle_transform_lattice
+    core/lattice.c lattice_transform_count
+tile_load (36)
+    core/tile.c tile_build_variants
+    core/cycle.c cycle_reverse
+    core/cycle.c cycle_signed_area2
+    core/tile.c parse_basis_row
+    core/tile.c trim_in_place
+    core/tile.c copy_trimmed
+    core/tile.c starts_with_label
+
+--- core/boundary.c (93) ---
+MAX_BOUNDARY_VERTS (2)
+    core/cycle.c coord_eq
+build_boundary_vertices (3)
+    throughput/vcomp.c coord_in_list
+poly_has_live_boundary (88)
+    throughput/vcomp.c has_vertex_completion_steps
+    core/attach.c build_frontier_vertices
+
+--- core/attach.c (225) ---
+MAX_EDGES (1)
+build_frontier_edges (2)
+    core/cycle.c cycle_edge
+coord_seen_before (2)
+    core/cycle.c coord_eq
+edge_opp (2)
+    core/cycle.c coord_eq
+edge_same (2)
+    core/cycle.c coord_eq
+cycle (3)
+    core/lattice.c lattice_embed_point
+build_frontier_vertices (4)
+    core/cycle.c coord_eq
+    core/attach.c build_frontier_edges
+find_outer_cycle (4)
+    core/cycle.c cycle_signed_area2
+poly_has_boundary_vertex (4)
+    core/cycle.c coord_eq
+    core/attach.c build_frontier_edges
+build_union_edges (6)
+    core/attach.c edge_opp
+    core/attach.c edge_same
+    core/cycle.c cycle_edge
+cycle_interior_point (6)
+    core/lattice.c lattice_embed_point
+    core/cycle.c cycle_signed_area2
+find_start_edge (7)
+    core/lattice.c lattice_direction_index
+    core/lattice.c lattice_embed_point
+pick_next_edge (7)
+    core/lattice.c lattice_direction_index
+    core/cycle.c coord_eq
+    core/lattice.c lattice_direction_count
+align_tile (9)
+    core/cycle.c cycle_translate
+    core/cycle.c coord_eq
+    core/tetrille.c tetrille_translate_cycle
+    core/tetrille.c tetrille_delta_to_6
+    core/tetrille.c tetrille_edge_tag
+    core/cycle.c cycle_edge
+has_overlap_via_tile_test (11)
+    core/attach.c cycle_interior_point
+    core/attach.c find_outer_cycle
+align_tile_to_frontier_edge (12)
+    core/attach.c align_tile
+    core/attach.c build_frontier_edges
+walk_one_cycle (15)
+    core/attach.c pick_next_edge
+    core/lattice.c lattice_direction_index
+    core/cycle.c coord_eq
+    core/attach.c coord_seen_before
+extract_cycles (23)
+    core/attach.c walk_one_cycle
+    core/attach.c find_start_edge
+try_attach_tile_poly_ex (52)
+    core/attach.c has_overlap_via_tile_test
+    core/attach.c extract_cycles
+    core/attach.c build_union_edges
+    core/attach.c align_tile
+    core/attach.c build_frontier_edges
+try_attach_tile_poly (53)
+    core/attach.c try_attach_tile_poly_ex
+
+--- rl0/generate_rl0.c (361) ---
+coord_less_local (1)
+copy_tiles (1)
+ensure_dir (1)
+floor_div6_local (1)
+print_cycle (1)
+print_indices (1)
+canonical_center_from_tiles (2)
+    core/cycle.c coord_eq
+coord_cmp_local (2)
+    rl0/generate_rl0.c coord_less_local
+cycle_vertex_index (2)
+    core/cycle.c coord_eq
+print_poly (2)
+    rl0/generate_rl0.c print_cycle
+print_tile_list (2)
+    rl0/generate_rl0.c print_cycle
+cycle_translate_lattice (3)
+    core/cycle.c cycle_translate
+    core/tetrille.c tetrille_translate_cycle
+poly_translate_lattice (4)
+    rl0/generate_rl0.c cycle_translate_lattice
+cycle_abs_area_cmp_desc (5)
+    core/cycle.c cycle_less
+    core/cycle.c cycle_signed_area2
+normalize_poly_and_tiles (10)
+    rl0/generate_rl0.c cycle_translate_lattice
+    rl0/generate_rl0.c poly_translate_lattice
+    rl0/generate_rl0.c floor_div6_local
+    core/tetrille.c tetrille_embed_point_scaled
+prepare_poly_cycles_local (14)
+    core/cycle.c cycle_less
+    core/cycle.c cycle_canonicalize_shift
+    core/cycle.c cycle_reverse
+    core/cycle.c cycle_signed_area2
+    rl0/generate_rl0.c cycle_abs_area_cmp_desc
+canonicalize_completion_with_tiles (43)
+    rl0/generate_rl0.c copy_tiles
+    core/cycle.c poly_less
+    rl0/generate_rl0.c prepare_poly_cycles_local
+    rl0/generate_rl0.c normalize_poly_and_tiles
+    core/cycle.c cycle_transform_lattice
+    core/cycle.c poly_transform_lattice
+    core/lattice.c lattice_transform_count
+main (124)
+    throughput/vcomp.c enumerate_vertex_completions_steps_trace
+    core/boundary.c build_boundary_vertices
+    rl0/generate_rl0.c ensure_dir
+    core/tile.c tile_load
+emit_completion (142)
+    rl0/generate_rl0.c print_indices
+    rl0/generate_rl0.c print_tile_list
+    rl0/generate_rl0.c print_poly
+    core/lattice.c lattice_direction_count
+    rl0/generate_rl0.c canonical_center_from_tiles
+    rl0/generate_rl0.c canonicalize_completion_with_tiles
+    rl0/generate_rl0.c cycle_vertex_index
+    core/boundary.c poly_has_live_boundary
+
+--- core/cycle.c (367) ---
+coord_eq (1)
+coord_less (1)
+cycle_abs_area_cmp_desc (1)
+cycle_edge (1)
+cycle_less (1)
+cycle_reverse (1)
+cycle_rotate_to_start (1)
+cycle_translate (1)
+cycle_translate_tetrille (1)
+floor_div6 (1)
+poly_less (1)
+tetrille_reflect (1)
+tri_reflect (1)
+tri_rot60 (1)
+poly_translate (2)
+    core/cycle.c cycle_translate
+tetrille_embed6_scaled (2)
+    core/tetrille.c tetrille_embed_point_scaled
+cycle_canonicalize_shift (3)
+    core/cycle.c coord_less
+    core/cycle.c coord_eq
+cycle_signed_area2 (3)
+    core/cycle.c tetrille_embed6_scaled
+tetrille_apply (3)
+    core/cycle.c tri_rot60
+    core/cycle.c tetrille_reflect
+triangular_apply (3)
+    core/cycle.c tri_rot60
+    core/cycle.c tri_reflect
+cycle_abs_area_cmp_desc (5)
+    core/cycle.c cycle_less
+    core/cycle.c cycle_signed_area2
+cycle_normalize_position (6)
+    core/cycle.c floor_div6
+    core/cycle.c cycle_translate_tetrille
+    core/cycle.c tetrille_embed6_scaled
+    core/cycle.c cycle_translate
+cycle_transform_lattice (7)
+    core/cycle.c tetrille_apply
+    core/cycle.c triangular_apply
+poly_normalize_position (7)
+    core/cycle.c cycle_translate_tetrille
+    core/cycle.c floor_div6
+    core/cycle.c tetrille_embed6_scaled
+    core/cycle.c poly_translate
+cycle_transform (8)
+    core/cycle.c cycle_transform_lattice
+poly_transform_lattice (8)
+    core/cycle.c cycle_transform_lattice
+poly_transform (9)
+    core/cycle.c poly_transform_lattice
+poly_prepare_cycles (14)
+    core/cycle.c cycle_less
+    core/cycle.c cycle_canonicalize_shift
+    core/cycle.c cycle_reverse
+    core/cycle.c cycle_signed_area2
+    rl0/generate_rl0.c cycle_abs_area_cmp_desc
+cycle_canonicalize_lattice (25)
+    core/cycle.c cycle_translate_tetrille
+    core/cycle.c cycle_rotate_to_start
+    core/cycle.c cycle_less
+    core/cycle.c cycle_canonicalize_shift
+    core/cycle.c cycle_normalize_position
+    core/cycle.c cycle_reverse
+    core/cycle.c cycle_signed_area2
+    core/cycle.c cycle_transform_lattice
+    core/lattice.c lattice_transform_count
+cycle_canonicalize (26)
+    core/cycle.c cycle_canonicalize_lattice
+poly_canonicalize_tetrille (31)
+    core/cycle.c poly_less
+    core/cycle.c poly_prepare_cycles
+    core/cycle.c poly_normalize_position
+    core/cycle.c poly_transform_lattice
+poly_canonicalize_lattice (63)
+    core/cycle.c poly_canonicalize_tetrille
+    core/cycle.c poly_less
+    core/cycle.c poly_prepare_cycles
+    core/cycle.c poly_normalize_position
+    core/cycle.c poly_transform_lattice
+    core/lattice.c lattice_transform_count
+poly_canonicalize (64)
+    core/cycle.c poly_canonicalize_lattice
+poly_hash_key_lattice (64)
+    core/cycle.c poly_canonicalize_lattice
+
+--- throughput/poly_pipeline.c (220) ---
+run_poly_levels (220)
+    core/vec.c vec_destroy
+    core/hash.c hash_destroy
+    core/hash.c hash_insert
+    core/boundary.c poly_has_live_boundary
+    core/attach.c try_attach_tile_poly
+    core/attach.c build_frontier_edges
+    core/vec.c vec_clear
+    core/hash.c hash_init
+    core/vec.c vec_push
+    core/vec.c vec_init
+    core/cycle.c poly_hash_key_lattice
+
+--- throughput/vcomp_pipeline.c (370) ---
+coord_cmp (1)
+mix_u64 (1)
+poly_equal_local (1)
+pow2_ge (1)
+stateset_destroy (1)
+stateset_rehash (1)
+sv_destroy (1)
+sv_init (1)
+sv_push (1)
+poly_hash64 (2)
+    throughput/vcomp_pipeline.c mix_u64
+stateset_init (2)
+    throughput/vcomp_pipeline.c pow2_ge
+state_equal (3)
+    core/cycle.c coord_eq
+    throughput/vcomp_pipeline.c poly_equal_local
+state_hash64 (4)
+    throughput/vcomp_pipeline.c mix_u64
+    throughput/vcomp_pipeline.c poly_hash64
+stateset_insert (5)
+    throughput/vcomp_pipeline.c state_equal
+    throughput/vcomp_pipeline.c stateset_rehash
+collect_emit (169)
+    core/hash.c hash_insert
+    throughput/vcomp_pipeline.c sv_push
+    throughput/vcomp_pipeline.c stateset_insert
+    throughput/vcomp_pipeline.c state_hash64
+    core/boundary.c poly_has_live_boundary
+    core/cycle.c poly_hash_key_lattice
+run_vcomp_levels (176)
+    throughput/vcomp_pipeline.c sv_destroy
+    throughput/vcomp_pipeline.c stateset_destroy
+    core/hash.c hash_destroy
+    throughput/vcomp.c enumerate_vertex_completions
+    core/boundary.c build_boundary_vertices
+    core/hash.c hash_insert
+    throughput/vcomp_pipeline.c state_hash64
+    throughput/vcomp_pipeline.c stateset_insert
+    core/cycle.c poly_hash_key_lattice
+    throughput/vcomp_pipeline.c sv_push
+    core/hash.c hash_init
+    throughput/vcomp_pipeline.c stateset_init
+    throughput/vcomp_pipeline.c sv_init
+
+--- throughput/vcomp.c (783) ---
+MAX_BOUNDARY_VERTS (1)
+probe_emit (1)
+coord_in_list (2)
+    core/cycle.c coord_eq
+target_vertex_valence (2)
+    core/lattice.c lattice_direction_count
+point_on_segment (3)
+    core/tetrille.c tetrille_point_on_segment
+point_on_cycle (4)
+    throughput/vcomp.c point_on_segment
+point_on_poly_boundary (5)
+    throughput/vcomp.c point_on_cycle
+hidden_connected_lattice (7)
+    core/lattice.c lattice_coords_adjacent
+build_next_hidden (8)
+    throughput/vcomp.c point_on_poly_boundary
+    throughput/vcomp.c coord_in_list
+dfs_vertex_completions (79)
+    throughput/vcomp.c point_on_poly_boundary
+    throughput/vcomp.c hidden_connected_lattice
+    throughput/vcomp.c build_next_hidden
+    core/boundary.c build_boundary_vertices
+    core/attach.c try_attach_tile_poly_ex
+    core/cycle.c coord_eq
+    core/attach.c build_frontier_edges
+enumerate_vertex_completions_steps (83)
+    throughput/vcomp.c dfs_vertex_completions
+    core/boundary.c build_boundary_vertices
+enumerate_vertex_completions_steps_trace (83)
+    throughput/vcomp.c dfs_vertex_completions
+    core/boundary.c build_boundary_vertices
+has_vertex_completion_bounded (83)
+    throughput/vcomp.c dfs_vertex_completions
+    core/boundary.c build_boundary_vertices
+has_vertex_completion_steps (83)
+    throughput/vcomp.c dfs_vertex_completions
+    core/boundary.c build_boundary_vertices
+enumerate_vertex_completions_mode (84)
+    throughput/vcomp.c enumerate_vertex_completions_steps
+has_vertex_completion (84)
+    throughput/vcomp.c has_vertex_completion_steps
+enumerate_vertex_completions (85)
+    throughput/vcomp.c enumerate_vertex_completions_mode
+has_vertex_completion_local (86)
+    throughput/vcomp.c has_vertex_completion_bounded
+    throughput/vcomp.c target_vertex_valence
