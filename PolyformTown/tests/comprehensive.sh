@@ -34,6 +34,11 @@ check_eq "$(./poly_print 4  tiles/hh.tile       | grep '^\[ *1' | wc -l)" "54"
 check_eq "$(./poly_print 9  tiles/kite.tile     | grep '^\[ *1' | wc -l)" "141"
 check_eq "$(./poly_print 3  tiles/hat.tile      | grep '^\[ *1' | wc -l)" "94"
 
+# ---- POLY PRINT (hole removal) ----
+check_eq "$(./poly_print 3 tiles/chair.tile --live-only | wc -l)" "246"
+check_eq "$(./poly_print 2 tiles/tetL.tile  --live-only | wc -l)" "63"
+check_eq "$(./poly_print 2 tiles/hat.tile   --live-only | wc -l)" "16"
+
 # ---- VCOMP COUNT ----
 check_eq "$(./vcomp_count 6 tiles/monomino.tile | get_count)" "30"
 check_eq "$(./vcomp_count 3 tiles/domino.tile   | get_count)" "38"
@@ -53,5 +58,8 @@ check_eq "$(./vcomp_print 7 tiles/hexagon.tile  | grep '^\[ *1' | wc -l)" "0"
 check_eq "$(./vcomp_print 1 tiles/hh.tile       | grep '^\[ *1' | wc -l)" "0"
 check_eq "$(./vcomp_print 6 tiles/kite.tile     | grep '^\[ *1' | wc -l)" "0"
 check_eq "$(./vcomp_print 4 tiles/hat.tile      | grep '^\[ *1' | wc -l)" "11"
+
+
+
 
 echo 0

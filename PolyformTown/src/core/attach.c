@@ -1,8 +1,10 @@
-#include "core/attach.h"
 #include <string.h>
 #include <math.h>
+#include "core/attach.h"
 #include "core/lattice.h"
 #include "core/tetrille.h"
+#include "core/boundary.h"
+#include "core/numerics.h"
 
 #define MAX_EDGES (MAX_VERTS)
 #define MAX_LOCAL (4 * MAX_VERTS)
@@ -21,115 +23,6 @@ enum {
 static int edge_same(Edge a, Edge b) { return coord_eq(a.a,b.a) && coord_eq(a.b,b.b); }
 static int edge_opp(Edge a, Edge b) { return coord_eq(a.a,b.b) && coord_eq(a.b,b.a); }
 
-/* ---------- point-in-cycle (ray casting) ---------- */
-
-static int point_in_cycle(double px, double py, const Cycle *c, int lattice) {
-    int inside = 0;
-    for (int i = 0, j = c->n - 1; i < c->n; j = i++) {
-        double xi, yi, xj, yj;
-        lattice_embed_point(lattice, c->v[i], &xi, &yi);
-        lattice_embed_point(lattice, c->v[j], &xj, &yj);
-
-        if ((yi > py) != (yj > py)) {
-            double xint = xi + (py - yi) * (xj - xi) / (yj - yi);
-            if (xint > px) inside = !inside;
-        }
-    }
-    return inside;
-}
-
-static int cycle_interior_point(const Cycle *c, int lattice, double *px, double *py) {
-    long long area2 = cycle_signed_area2(c, lattice);
-    if (area2 == 0) return 0;
-
-    for (int i = 0; i < c->n; i++) {
-        Coord a = c->v[i];
-        Coord b = c->v[(i + 1) % c->n];
-        double ax, ay, bx, by;
-        double dx, dy, nx, ny, scale;
-        double mx, my, sx, sy;
-
-        lattice_embed_point(lattice, a, &ax, &ay);
-        lattice_embed_point(lattice, b, &bx, &by);
-        dx = bx - ax;
-        dy = by - ay;
-        if (dx == 0.0 && dy == 0.0) continue;
-
-        if (area2 > 0) {
-            nx = -dy;
-            ny = dx;
-        } else {
-            nx = dy;
-            ny = -dx;
-        }
-
-        scale = fabs(nx) > fabs(ny) ? fabs(nx) : fabs(ny);
-        if (scale == 0.0) continue;
-
-        mx = (ax + bx) / 2.0;
-        my = (ay + by) / 2.0;
-        sx = mx + 0.25 * nx / scale;
-        sy = my + 0.25 * ny / scale;
-        if (point_in_cycle(sx, sy, c, lattice)) {
-            *px = sx;
-            *py = sy;
-            return 1;
-        }
-    }
-
-    for (int i = 0; i < c->n; i++) {
-        Coord a = c->v[(i + c->n - 1) % c->n];
-        Coord b = c->v[i];
-        Coord d = c->v[(i + 1) % c->n];
-        double ax, ay, bx, by, dx, dy;
-        double cross;
-
-        lattice_embed_point(lattice, a, &ax, &ay);
-        lattice_embed_point(lattice, b, &bx, &by);
-        lattice_embed_point(lattice, d, &dx, &dy);
-
-        cross = (bx - ax) * (dy - by) - (by - ay) * (dx - bx);
-        if (cross == 0.0) continue;
-        if ((area2 > 0 && cross > 0.0) || (area2 < 0 && cross < 0.0)) {
-            *px = (ax + bx + dx) / 3.0;
-            *py = (ay + by + dy) / 3.0;
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-/* ---------- overlap validation ---------- */
-
-static int find_outer_cycle(const Poly *p, int lattice) {
-    int outer = 0;
-    long long best = cycle_signed_area2(&p->cycles[0], lattice);
-    if (best < 0) best = -best;
-    for (int i = 1; i < p->cycle_count; i++) {
-        long long area = cycle_signed_area2(&p->cycles[i], lattice);
-        if (area < 0) area = -area;
-        if (area > best) {
-            best = area;
-            outer = i;
-        }
-    }
-    return outer;
-}
-
-static int has_overlap_via_tile_test(const Poly *p, const Cycle *tile, int lattice) {
-    int outer = find_outer_cycle(p, lattice);
-    for (int i = 0; i < p->cycle_count; i++) {
-        const Cycle *c;
-        double px, py;
-        if (i == outer) continue;
-        c = &p->cycles[i];
-        if (c->n < 3) continue;
-        if (!cycle_interior_point(c, lattice, &px, &py)) continue;
-        if (point_in_cycle(px, py, tile, lattice)) return 1;
-    }
-    return 0;
-}
 
 /* ---------- geometry core ---------- */
 
@@ -179,47 +72,11 @@ static int align_tile(const Cycle *tile, int tile_edge_index, Edge target, int l
     }
 }
 
-int build_frontier_edges(const Poly *p, Edge *edges) {
-    int n = 0;
-    for (int i = 0; i < p->cycle_count; i++)
-        for (int j = 0; j < p->cycles[i].n; j++)
-            edges[n++] = cycle_edge(&p->cycles[i], j);
-    return n;
-}
-
-int build_frontier_vertices(const Poly *p, Coord *verts) {
-    Edge edges[MAX_VERTS * MAX_CYCLES];
-    int ec = build_frontier_edges(p, edges);
-    int vc = 0;
-
-    for (int i = 0; i < ec; i++) {
-        int seen_a = 0;
-        int seen_b = 0;
-        for (int j = 0; j < vc; j++) {
-            if (coord_eq(verts[j], edges[i].a)) seen_a = 1;
-            if (coord_eq(verts[j], edges[i].b)) seen_b = 1;
-        }
-        if (!seen_a) verts[vc++] = edges[i].a;
-        if (!seen_b) verts[vc++] = edges[i].b;
-    }
-
-    return vc;
-}
-
-int poly_has_boundary_vertex(const Poly *p, Coord v) {
-    Edge edges[MAX_VERTS * MAX_CYCLES];
-    int ec = build_frontier_edges(p, edges);
-    for (int i = 0; i < ec; i++) {
-        if (coord_eq(edges[i].a, v) || coord_eq(edges[i].b, v)) return 1;
-    }
-    return 0;
-}
-
 int align_tile_to_frontier_edge(const Poly *base, const Cycle *tile_variant,
                                 int base_edge_index, int tile_edge_index,
                                 Cycle *aligned) {
     Edge frontier[MAX_VERTS * MAX_CYCLES];
-    int frontier_n = build_frontier_edges(base, frontier);
+    int frontier_n = build_boundary_edges(base, frontier);
     if (base_edge_index < 0 || base_edge_index >= frontier_n) return 0;
     return align_tile(tile_variant, tile_edge_index, frontier[base_edge_index], TILE_LATTICE_SQUARE, aligned);
 }
@@ -387,6 +244,41 @@ static int extract_cycles(const LEdge *in, int in_n, int prefer_left, int lattic
     return out->cycle_count;
 }
 
+
+/* ---------- overlap validation ---------- */
+
+static int find_outer_cycle(const Poly *p, int lattice) {
+    int outer = 0;
+    long long best = cycle_signed_area2(&p->cycles[0], lattice);
+    if (best < 0) best = -best;
+    for (int i = 1; i < p->cycle_count; i++) {
+        long long area = cycle_signed_area2(&p->cycles[i], lattice);
+        if (area < 0) area = -area;
+        if (area > best) {
+            best = area;
+            outer = i;
+        }
+    }
+    return outer;
+}
+
+static int has_overlap_via_tile_test(const Poly *p, const Cycle *tile, int lattice) {
+    int outer = find_outer_cycle(p, lattice);
+    for (int i = 0; i < p->cycle_count; i++) {
+        const Cycle *c;
+        double px, py;
+        if (i == outer) continue;
+        c = &p->cycles[i];
+        if (c->n < 3) continue;
+        if (!cycle_interior_point(c, lattice, &px, &py)) continue;
+        if (point_in_cycle(px, py, tile, lattice)) return 1;
+    }
+    return 0;
+}
+
+
+/* ---------- overall controllers ---------- */
+
 int try_attach_tile_poly(const Poly *base, const Cycle *tile_variant,
                          int lattice,
                          int base_edge_index, int tile_edge_index,
@@ -407,7 +299,7 @@ int try_attach_tile_poly_ex(const Poly *base, const Cycle *tile_variant,
     int frontier_n;
     int merged_n;
 
-    frontier_n = build_frontier_edges(base, frontier);
+    frontier_n = build_boundary_edges(base, frontier);
     if (base_edge_index < 0 || base_edge_index >= frontier_n) return 0;
 
     if (!align_tile(tile_variant, tile_edge_index, frontier[base_edge_index], lattice, &aligned)) return 0;

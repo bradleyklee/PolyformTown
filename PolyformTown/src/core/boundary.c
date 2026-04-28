@@ -1,14 +1,33 @@
 #include "core/boundary.h"
-
+#include "core/cycle.h"
 #include "core/attach.h"
-#include "throughput/vcomp.h"
 
 #define MAX_BOUNDARY_VERTS (MAX_VERTS * MAX_CYCLES)
 
+static int dfs_has_completion(const Poly *p,
+                              const Tile *tile,
+                              Coord target);
+
+/* membership functions  */
 static int coord_in_list(const Coord *verts, int count, Coord v) {
     for (int i = 0; i < count; i++) if (coord_eq(verts[i], v)) return 1;
     return 0;
 }
+
+static int point_on_poly_boundary(const Poly *p, Coord q, int lattice) {
+    (void)lattice;  // no longer needed
+
+    for (int i = 0; i < p->cycle_count; i++) {
+        const Cycle *c = &p->cycles[i];
+        for (int j = 0; j < c->n; j++) {
+            if (coord_eq(c->v[j], q)) return 1;
+        }
+    }
+    return 0;
+}
+
+
+/* boundary checking top level */
 
 int build_boundary_vertices(const Poly *p, Coord *verts) {
     int count = 0;
@@ -25,14 +44,60 @@ int build_boundary_vertices(const Poly *p, Coord *verts) {
     return count;
 }
 
+int build_boundary_edges(const Poly *p, Edge *edges) {
+    int n = 0;
+    for (int i = 0; i < p->cycle_count; i++)
+        for (int j = 0; j < p->cycles[i].n; j++)
+            edges[n++] = cycle_edge(&p->cycles[i], j);
+    return n;
+}
+
 int poly_has_live_boundary(const Poly *p, const Tile *tile) {
     Coord verts[2 * MAX_BOUNDARY_VERTS];
-    int vc = build_frontier_vertices(p, verts);
+    int vc = build_boundary_vertices(p, verts);
     if (vc < 0 || vc > 2 * MAX_BOUNDARY_VERTS) return 0;
     for (int i = 0; i < vc; i++) {
-        if (!has_vertex_completion_steps(p, tile, verts[i], NULL, 0, -1)) {
+        if (!dfs_has_completion(p, tile, verts[i])) {
             return 0;
         }
     }
     return 1;
+}
+
+/* boundary checking top level */
+
+static int dfs_has_completion(const Poly *p,
+                              const Tile *tile,
+                              Coord target)
+{
+    Edge edges[2 * MAX_BOUNDARY_VERTS];
+    int ec = build_boundary_edges(p, edges);
+
+    for (int be = 0; be < ec; be++) {
+
+        if (!coord_eq(edges[be].a, target))
+            continue;
+
+        for (int v = 0; v < tile->variant_count; v++) {
+            const Cycle *tv = &tile->variants[v];
+
+            for (int te = 0; te < tv->n; te++) {
+                Poly grown;
+                Cycle aligned;
+
+                if (!try_attach_tile_poly_ex(p, tv, tile->lattice,
+                                             be, te, &grown, &aligned))
+                    continue;
+
+                /* success: target no longer on boundary */
+                if (!point_on_poly_boundary(&grown, target, tile->lattice))
+                    return 1;
+
+                if (dfs_has_completion(&grown, tile, target))
+                    return 1;
+            }
+        }
+    }
+
+    return 0;
 }

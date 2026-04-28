@@ -5,7 +5,7 @@ SRC = src
 CORE = $(SRC)/core/cycle.o $(SRC)/core/tile.o $(SRC)/core/hash.o \
        $(SRC)/core/vec.o $(SRC)/core/attach.o \
        $(SRC)/core/tetrille.o $(SRC)/core/lattice.o \
-       $(SRC)/core/boundary.o
+       $(SRC)/core/boundary.o $(SRC)/core/numerics.o
 POLY_SURFACE = $(SRC)/throughput/vcomp.o $(SRC)/throughput/poly_pipeline.o
 VCOMP_SURFACE = $(SRC)/throughput/vcomp.o $(SRC)/throughput/vcomp_pipeline.o
 

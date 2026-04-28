@@ -30,7 +30,7 @@ void run_poly_levels(const Tile *tile,
 
         for (size_t i = 0; i < cur.count; i++) {
             Edge frontier[MAX_VERTS * MAX_CYCLES];
-            int fc = build_frontier_edges(&cur.data[i], frontier);
+            int fc = build_boundary_edges(&cur.data[i], frontier);
             for (int v = 0; v < tile->variant_count; v++) {
                 const Cycle *tv = &tile->variants[v];
                 for (int be = 0; be < fc; be++) {

@@ -6,6 +6,13 @@ vec_destroy (1)
 vec_init (1)
 vec_push (1)
 
+--- core/numerics.c (9) ---
+cycle (3)
+    core/lattice.c lattice_embed_point
+cycle_interior_point (6)
+    core/lattice.c lattice_embed_point
+    core/cycle.c cycle_signed_area2
+
 --- core/hash.c (13) ---
 hash_destroy (1)
 hash_init (1)
@@ -82,42 +89,51 @@ tile_load (36)
     core/tile.c copy_trimmed
     core/tile.c starts_with_label
 
---- core/boundary.c (93) ---
+--- core/boundary.c (125) ---
 MAX_BOUNDARY_VERTS (2)
+    core/cycle.c coord_eq
+build_boundary_edges (2)
+    core/cycle.c cycle_edge
+point_on_poly_boundary (2)
     core/cycle.c coord_eq
 build_boundary_vertices (3)
     throughput/vcomp.c coord_in_list
-poly_has_live_boundary (88)
-    throughput/vcomp.c has_vertex_completion_steps
-    core/attach.c build_frontier_vertices
+dfs_has_completion (56)
+    core/boundary.c point_on_poly_boundary
+    core/attach.c try_attach_tile_poly_ex
+    core/cycle.c coord_eq
+    core/boundary.c build_boundary_edges
+poly_has_live_boundary (60)
+    core/boundary.c dfs_has_completion
+    core/boundary.c build_boundary_vertices
 
---- core/attach.c (225) ---
+--- throughput/poly_pipeline.c (188) ---
+run_poly_levels (188)
+    core/vec.c vec_destroy
+    core/hash.c hash_destroy
+    core/hash.c hash_insert
+    core/boundary.c poly_has_live_boundary
+    core/attach.c try_attach_tile_poly
+    core/vec.c vec_clear
+    core/hash.c hash_init
+    core/vec.c vec_push
+    core/vec.c vec_init
+    core/cycle.c poly_hash_key_lattice
+
+--- core/attach.c (200) ---
 MAX_EDGES (1)
-build_frontier_edges (2)
-    core/cycle.c cycle_edge
 coord_seen_before (2)
     core/cycle.c coord_eq
 edge_opp (2)
     core/cycle.c coord_eq
 edge_same (2)
     core/cycle.c coord_eq
-cycle (3)
-    core/lattice.c lattice_embed_point
-build_frontier_vertices (4)
-    core/cycle.c coord_eq
-    core/attach.c build_frontier_edges
 find_outer_cycle (4)
     core/cycle.c cycle_signed_area2
-poly_has_boundary_vertex (4)
-    core/cycle.c coord_eq
-    core/attach.c build_frontier_edges
 build_union_edges (6)
     core/attach.c edge_opp
     core/attach.c edge_same
     core/cycle.c cycle_edge
-cycle_interior_point (6)
-    core/lattice.c lattice_embed_point
-    core/cycle.c cycle_signed_area2
 find_start_edge (7)
     core/lattice.c lattice_direction_index
     core/lattice.c lattice_embed_point
@@ -132,12 +148,11 @@ align_tile (9)
     core/tetrille.c tetrille_delta_to_6
     core/tetrille.c tetrille_edge_tag
     core/cycle.c cycle_edge
-has_overlap_via_tile_test (11)
-    core/attach.c cycle_interior_point
-    core/attach.c find_outer_cycle
-align_tile_to_frontier_edge (12)
+align_tile_to_frontier_edge (10)
     core/attach.c align_tile
-    core/attach.c build_frontier_edges
+has_overlap_via_tile_test (11)
+    core/numerics.c cycle_interior_point
+    core/attach.c find_outer_cycle
 walk_one_cycle (15)
     core/attach.c pick_next_edge
     core/lattice.c lattice_direction_index
@@ -146,16 +161,15 @@ walk_one_cycle (15)
 extract_cycles (23)
     core/attach.c walk_one_cycle
     core/attach.c find_start_edge
-try_attach_tile_poly_ex (52)
+try_attach_tile_poly_ex (50)
     core/attach.c has_overlap_via_tile_test
     core/attach.c extract_cycles
     core/attach.c build_union_edges
     core/attach.c align_tile
-    core/attach.c build_frontier_edges
-try_attach_tile_poly (53)
+try_attach_tile_poly (51)
     core/attach.c try_attach_tile_poly_ex
 
---- rl0/generate_rl0.c (361) ---
+--- rl0/generate_rl0.c (323) ---
 coord_less_local (1)
 copy_tiles (1)
 ensure_dir (1)
@@ -199,12 +213,7 @@ canonicalize_completion_with_tiles (43)
     core/cycle.c cycle_transform_lattice
     core/cycle.c poly_transform_lattice
     core/lattice.c lattice_transform_count
-main (124)
-    throughput/vcomp.c enumerate_vertex_completions_steps_trace
-    core/boundary.c build_boundary_vertices
-    rl0/generate_rl0.c ensure_dir
-    core/tile.c tile_load
-emit_completion (142)
+emit_completion (114)
     rl0/generate_rl0.c print_indices
     rl0/generate_rl0.c print_tile_list
     rl0/generate_rl0.c print_poly
@@ -213,6 +222,56 @@ emit_completion (142)
     rl0/generate_rl0.c canonicalize_completion_with_tiles
     rl0/generate_rl0.c cycle_vertex_index
     core/boundary.c poly_has_live_boundary
+main (114)
+    throughput/vcomp.c enumerate_vertex_completions_steps_trace
+    core/boundary.c build_boundary_vertices
+    rl0/generate_rl0.c ensure_dir
+    core/tile.c tile_load
+
+--- throughput/vcomp_pipeline.c (332) ---
+coord_cmp (1)
+mix_u64 (1)
+poly_equal_local (1)
+pow2_ge (1)
+stateset_destroy (1)
+stateset_rehash (1)
+sv_destroy (1)
+sv_init (1)
+sv_push (1)
+poly_hash64 (2)
+    throughput/vcomp_pipeline.c mix_u64
+stateset_init (2)
+    throughput/vcomp_pipeline.c pow2_ge
+state_equal (3)
+    core/cycle.c coord_eq
+    throughput/vcomp_pipeline.c poly_equal_local
+state_hash64 (4)
+    throughput/vcomp_pipeline.c mix_u64
+    throughput/vcomp_pipeline.c poly_hash64
+stateset_insert (5)
+    throughput/vcomp_pipeline.c state_equal
+    throughput/vcomp_pipeline.c stateset_rehash
+collect_emit (141)
+    core/hash.c hash_insert
+    throughput/vcomp_pipeline.c sv_push
+    throughput/vcomp_pipeline.c stateset_insert
+    throughput/vcomp_pipeline.c state_hash64
+    core/boundary.c poly_has_live_boundary
+    core/cycle.c poly_hash_key_lattice
+run_vcomp_levels (166)
+    throughput/vcomp_pipeline.c sv_destroy
+    throughput/vcomp_pipeline.c stateset_destroy
+    core/hash.c hash_destroy
+    throughput/vcomp.c enumerate_vertex_completions
+    core/boundary.c build_boundary_vertices
+    core/hash.c hash_insert
+    throughput/vcomp_pipeline.c state_hash64
+    throughput/vcomp_pipeline.c stateset_insert
+    core/cycle.c poly_hash_key_lattice
+    throughput/vcomp_pipeline.c sv_push
+    core/hash.c hash_init
+    throughput/vcomp_pipeline.c stateset_init
+    throughput/vcomp_pipeline.c sv_init
 
 --- core/cycle.c (367) ---
 coord_eq (1)
@@ -301,66 +360,7 @@ poly_canonicalize (64)
 poly_hash_key_lattice (64)
     core/cycle.c poly_canonicalize_lattice
 
---- throughput/poly_pipeline.c (220) ---
-run_poly_levels (220)
-    core/vec.c vec_destroy
-    core/hash.c hash_destroy
-    core/hash.c hash_insert
-    core/boundary.c poly_has_live_boundary
-    core/attach.c try_attach_tile_poly
-    core/attach.c build_frontier_edges
-    core/vec.c vec_clear
-    core/hash.c hash_init
-    core/vec.c vec_push
-    core/vec.c vec_init
-    core/cycle.c poly_hash_key_lattice
-
---- throughput/vcomp_pipeline.c (370) ---
-coord_cmp (1)
-mix_u64 (1)
-poly_equal_local (1)
-pow2_ge (1)
-stateset_destroy (1)
-stateset_rehash (1)
-sv_destroy (1)
-sv_init (1)
-sv_push (1)
-poly_hash64 (2)
-    throughput/vcomp_pipeline.c mix_u64
-stateset_init (2)
-    throughput/vcomp_pipeline.c pow2_ge
-state_equal (3)
-    core/cycle.c coord_eq
-    throughput/vcomp_pipeline.c poly_equal_local
-state_hash64 (4)
-    throughput/vcomp_pipeline.c mix_u64
-    throughput/vcomp_pipeline.c poly_hash64
-stateset_insert (5)
-    throughput/vcomp_pipeline.c state_equal
-    throughput/vcomp_pipeline.c stateset_rehash
-collect_emit (169)
-    core/hash.c hash_insert
-    throughput/vcomp_pipeline.c sv_push
-    throughput/vcomp_pipeline.c stateset_insert
-    throughput/vcomp_pipeline.c state_hash64
-    core/boundary.c poly_has_live_boundary
-    core/cycle.c poly_hash_key_lattice
-run_vcomp_levels (176)
-    throughput/vcomp_pipeline.c sv_destroy
-    throughput/vcomp_pipeline.c stateset_destroy
-    core/hash.c hash_destroy
-    throughput/vcomp.c enumerate_vertex_completions
-    core/boundary.c build_boundary_vertices
-    core/hash.c hash_insert
-    throughput/vcomp_pipeline.c state_hash64
-    throughput/vcomp_pipeline.c stateset_insert
-    core/cycle.c poly_hash_key_lattice
-    throughput/vcomp_pipeline.c sv_push
-    core/hash.c hash_init
-    throughput/vcomp_pipeline.c stateset_init
-    throughput/vcomp_pipeline.c sv_init
-
---- throughput/vcomp.c (783) ---
+--- throughput/vcomp.c (690) ---
 MAX_BOUNDARY_VERTS (1)
 probe_emit (1)
 coord_in_list (2)
@@ -371,39 +371,38 @@ point_on_segment (3)
     core/tetrille.c tetrille_point_on_segment
 point_on_cycle (4)
     throughput/vcomp.c point_on_segment
+build_next_hidden (5)
+    core/boundary.c point_on_poly_boundary
+    throughput/vcomp.c coord_in_list
 point_on_poly_boundary (5)
     throughput/vcomp.c point_on_cycle
 hidden_connected_lattice (7)
     core/lattice.c lattice_coords_adjacent
-build_next_hidden (8)
-    throughput/vcomp.c point_on_poly_boundary
-    throughput/vcomp.c coord_in_list
-dfs_vertex_completions (79)
-    throughput/vcomp.c point_on_poly_boundary
+dfs_vertex_completions (69)
+    core/boundary.c point_on_poly_boundary
     throughput/vcomp.c hidden_connected_lattice
     throughput/vcomp.c build_next_hidden
     core/boundary.c build_boundary_vertices
     core/attach.c try_attach_tile_poly_ex
     core/cycle.c coord_eq
-    core/attach.c build_frontier_edges
-enumerate_vertex_completions_steps (83)
+enumerate_vertex_completions_steps (73)
     throughput/vcomp.c dfs_vertex_completions
     core/boundary.c build_boundary_vertices
-enumerate_vertex_completions_steps_trace (83)
+enumerate_vertex_completions_steps_trace (73)
     throughput/vcomp.c dfs_vertex_completions
     core/boundary.c build_boundary_vertices
-has_vertex_completion_bounded (83)
+has_vertex_completion_bounded (73)
     throughput/vcomp.c dfs_vertex_completions
     core/boundary.c build_boundary_vertices
-has_vertex_completion_steps (83)
+has_vertex_completion_steps (73)
     throughput/vcomp.c dfs_vertex_completions
     core/boundary.c build_boundary_vertices
-enumerate_vertex_completions_mode (84)
+enumerate_vertex_completions_mode (74)
     throughput/vcomp.c enumerate_vertex_completions_steps
-has_vertex_completion (84)
+has_vertex_completion (74)
     throughput/vcomp.c has_vertex_completion_steps
-enumerate_vertex_completions (85)
+enumerate_vertex_completions (75)
     throughput/vcomp.c enumerate_vertex_completions_mode
-has_vertex_completion_local (86)
+has_vertex_completion_local (76)
     throughput/vcomp.c has_vertex_completion_bounded
     throughput/vcomp.c target_vertex_valence

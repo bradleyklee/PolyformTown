@@ -23,6 +23,7 @@ typedef struct {
     void *userdata;
 } VCompCtx;
 
+//duplicate with boundary
 static int coord_in_list(const Coord *verts, int count, Coord v) {
     for (int i = 0; i < count; i++) if (coord_eq(verts[i], v)) return 1;
     return 0;
@@ -124,7 +125,7 @@ static void dfs_vertex_completions(const Poly *p,
     if (ctx->stop_after_first && *ctx->stop_flag) return;
     if (ctx->max_steps >= 0 && completion_steps >= ctx->max_steps) return;
     Edge frontier[MAX_VERTS * MAX_CYCLES];
-    int fc = build_frontier_edges(p, frontier);
+    int fc = build_boundary_edges(p, frontier);
     for (int be = 0; be < fc; be++) {
         if (ctx->stop_after_first && *ctx->stop_flag) return;
         if (!coord_eq(frontier[be].b, ctx->target)) continue;
