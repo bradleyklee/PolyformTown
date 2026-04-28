@@ -171,6 +171,8 @@ int main(int argc, char **argv) {
                                verts[i],
                                NULL,
                                0,
+                               NULL,
+                               0,
                                VCOMP_MAX_LEVELS - 1,
                                1,
                                &raw);

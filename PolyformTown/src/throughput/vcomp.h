@@ -36,6 +36,8 @@ void vcomp_enumerate_levels(const Poly *base,
                             Coord target,
                             const Coord *initial_hidden,
                             int initial_hidden_count,
+                            const Cycle *initial_tiles,
+                            int initial_tile_count,
                             int max_hidden,
                             int track_tiles,
                             VCompLevels *out);

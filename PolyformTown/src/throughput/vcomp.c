@@ -433,6 +433,8 @@ void vcomp_enumerate_levels(const Poly *base,
                             Coord target,
                             const Coord *initial_hidden,
                             int initial_hidden_count,
+                            const Cycle *initial_tiles,
+                            int initial_tile_count,
                             int max_hidden,
                             int track_tiles,
                             VCompLevels *out) {
@@ -447,6 +449,9 @@ void vcomp_enumerate_levels(const Poly *base,
     if (max_hidden < 0) return;
     if (max_hidden > out->max_level) max_hidden = out->max_level;
     if (initial_hidden_count < 0 || initial_hidden_count > VCOMP_MAX_HIDDEN) {
+        return;
+    }
+    if (initial_tile_count < 0 || initial_tile_count > VCOMP_MAX_TRACE) {
         return;
     }
 
@@ -467,8 +472,15 @@ void vcomp_enumerate_levels(const Poly *base,
     }
 
     if (track_tiles) {
-        trace_tiles[0] = ctx.tile->base;
-        start_tiles = 1;
+        if (initial_tiles && initial_tile_count > 0) {
+            for (int i = 0; i < initial_tile_count; i++) {
+                trace_tiles[i] = initial_tiles[i];
+            }
+            start_tiles = initial_tile_count;
+        } else {
+            trace_tiles[0] = ctx.tile->base;
+            start_tiles = 1;
+        }
     }
 
     dfs_levels(base,
