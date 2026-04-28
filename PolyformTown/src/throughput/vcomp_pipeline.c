@@ -56,12 +56,7 @@ static int poly_equal_local(const Poly *a, const Poly *b) {
 }
 
 static int state_equal(const VCompState *a, const VCompState *b) {
-    if (!poly_equal_local(&a->poly, &b->poly)) return 0;
-    if (a->hidden_count != b->hidden_count) return 0;
-    for (int i = 0; i < a->hidden_count; i++) {
-        if (!coord_eq(a->hidden[i], b->hidden[i])) return 0;
-    }
-    return 1;
+    return poly_equal_local(&a->poly, &b->poly);
 }
 
 typedef struct {
@@ -115,14 +110,8 @@ static uint64_t poly_hash64(const Poly *p) {
 }
 
 static uint64_t state_hash64(const VCompState *s, const Poly *poly_key) {
-    uint64_t h = poly_hash64(poly_key);
-    h = mix_u64(h, (uint64_t)s->hidden_count);
-    for (int i = 0; i < s->hidden_count; i++) {
-        h = mix_u64(h, (uint64_t)(uint32_t)s->hidden[i].v);
-        h = mix_u64(h, (uint64_t)(uint32_t)s->hidden[i].x);
-        h = mix_u64(h, (uint64_t)(uint32_t)s->hidden[i].y);
-    }
-    return h;
+    (void)s;
+    return poly_hash64(poly_key);
 }
 
 static void stateset_rehash(StateSet *s, size_t new_cap) {
@@ -264,6 +253,8 @@ void run_vcomp_levels(const Tile *tile,
                                        verts[j],
                                        levels[level].data[i].hidden,
                                        levels[level].data[i].hidden_count,
+                                       levels[level].data[i].tiles,
+                                       levels[level].data[i].tile_count,
                                        max_n,
                                        track_tiles,
                                        &raw);

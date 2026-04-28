@@ -15,6 +15,7 @@ tile_count:<int>
 center:(v,x,y)
 canonical_boundary:<poly>
 tiles:<tile_list>
+hidden:<coord_list>
 indices:<int_list>
 
 Fields
@@ -42,7 +43,12 @@ Fields
    List format:
    [tile_cycle0,tile_cycle1,...]
 
-6) indices
+6) hidden
+   Hidden vertex set tracked for this completion state.
+   List format:
+   [(v,x,y),(v,x,y),...]
+
+7) indices
    One integer per tile in `tiles`.
    Each integer is the vertex index in that aligned tile cycle whose
    coordinate equals the completed target vertex.

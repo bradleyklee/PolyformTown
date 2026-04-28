@@ -47,17 +47,17 @@ check_eq "$(./vcomp_count 5 tiles/triangle.tile | get_count)" "21"
 check_eq "$(./vcomp_count 7 tiles/hexagon.tile  | get_count)" "13"
 check_eq "$(./vcomp_count 1 tiles/hh.tile       | get_count)" "27"
 check_eq "$(./vcomp_count 6 tiles/kite.tile     | get_count)" "85"
-check_eq "$(./vcomp_count 4 tiles/hat.tile      | get_count)" "38"
+check_eq "$(./vcomp_count 4 tiles/hat.tile      | get_count)" "36"
 
 # ---- VCOMP PRINT (holes only) ----
-check_eq "$(./vcomp_print 6 tiles/monomino.tile | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 3 tiles/domino.tile   | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 2 tiles/chair.tile    | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 5 tiles/triangle.tile | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 7 tiles/hexagon.tile  | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 1 tiles/hh.tile       | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 6 tiles/kite.tile     | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 4 tiles/hat.tile      | grep '^\[ *1' | wc -l)" "11"
+check_eq "$(./vcomp_print 6 tiles/monomino.tile | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
+check_eq "$(./vcomp_print 3 tiles/domino.tile   | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
+check_eq "$(./vcomp_print 2 tiles/chair.tile    | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
+check_eq "$(./vcomp_print 5 tiles/triangle.tile | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
+check_eq "$(./vcomp_print 7 tiles/hexagon.tile  | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
+check_eq "$(./vcomp_print 1 tiles/hh.tile       | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
+check_eq "$(./vcomp_print 6 tiles/kite.tile     | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
+check_eq "$(./vcomp_print 4 tiles/hat.tile      | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "11"
 
 
 

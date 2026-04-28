@@ -70,6 +70,15 @@ static void print_indices(FILE *fp, const int *indices, int count) {
     fprintf(fp, "]");
 }
 
+static void print_coord_list(FILE *fp, const Coord *coords, int count) {
+    fprintf(fp, "[");
+    for (int i = 0; i < count; i++) {
+        if (i) fprintf(fp, ",");
+        fprintf(fp, "(%d,%d,%d)", coords[i].v, coords[i].x, coords[i].y);
+    }
+    fprintf(fp, "]");
+}
+
 static int cycle_vertex_index(const Cycle *c, Coord q) {
     for (int i = 0; i < c->n; i++) {
         if (coord_eq(c->v[i], q)) return i;
@@ -104,6 +113,9 @@ static void emit_raw_completion(const VCompRawState *raw, RL0Ctx *ctx) {
     fprintf(ctx->fp, "\n");
     fprintf(ctx->fp, "tiles:");
     print_tile_list(ctx->fp, raw->tiles, total_tile_count);
+    fprintf(ctx->fp, "\n");
+    fprintf(ctx->fp, "hidden:");
+    print_coord_list(ctx->fp, raw->hidden, raw->hidden_count);
     fprintf(ctx->fp, "\n");
     fprintf(ctx->fp, "indices:");
     print_indices(ctx->fp, indices, total_tile_count);
@@ -169,6 +181,8 @@ int main(int argc, char **argv) {
         vcomp_enumerate_levels(&seed,
                                &tile,
                                verts[i],
+                               NULL,
+                               0,
                                NULL,
                                0,
                                VCOMP_MAX_LEVELS - 1,

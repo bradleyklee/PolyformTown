@@ -291,6 +291,10 @@ Data is streamed into a text-to-SVG converter, saved to a local
 file, and opened. The generator and tile model can be changed 
 to visualize different datasets.
 
+`vcomp_print` emits grouped records with `Aggregate`, `Tiles`,
+and `Hidden` blocks. `imgtable` renders hidden vertices as black
+points and renders `Center` (when present) as a red point.
+
 
 ## OEIS Comparisons
 
