@@ -823,23 +823,23 @@ static void emit_group_svg(FILE *fp, const GroupShape *g,
         if (c == CHIRALITY_REFLECTED) fill = "#bcd0e2";
         emit_shape_path(fp, &g->tiles[i], tx, ty, scale, fill, "#666666", 0.8);
     }
-    if (g->has_center) {
-        DPoint c = vertex_to_xy(g->aggregate, g->center);
-        double cx = tx + scale * c.x;
-        double cy = ty - scale * c.y;
-        fprintf(fp,
-                "<circle cx=\"%.3f\" cy=\"%.3f\" r=\"2.8\" "
-                "fill=\"#d60000\" stroke=\"white\" stroke-width=\"0.8\"/>\n",
-                cx, cy);
-    }
     for (int i = 0; i < g->hidden_count; i++) {
         DPoint h = vertex_to_xy(g->aggregate, g->hidden[i]);
         double hx = tx + scale * h.x;
         double hy = ty - scale * h.y;
         fprintf(fp,
                 "<circle cx=\"%.3f\" cy=\"%.3f\" r=\"2.1\" "
-                "fill=\"#000000\" stroke=\"white\" stroke-width=\"0.6\"/>\n",
+                "fill=\"#000000\" stroke=\"none\"/>\n",
                 hx, hy);
+    }
+    if (g->has_center) {
+        DPoint c = vertex_to_xy(g->aggregate, g->center);
+        double cx = tx + scale * c.x;
+        double cy = ty - scale * c.y;
+        fprintf(fp,
+                "<circle cx=\"%.3f\" cy=\"%.3f\" r=\"2.8\" "
+                "fill=\"#d60000\" stroke=\"none\"/>\n",
+                cx, cy);
     }
 }
 
