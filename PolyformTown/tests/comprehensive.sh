@@ -47,7 +47,7 @@ check_eq "$(./vcomp_count 5 tiles/triangle.tile | get_count)" "21"
 check_eq "$(./vcomp_count 7 tiles/hexagon.tile  | get_count)" "13"
 check_eq "$(./vcomp_count 1 tiles/hh.tile       | get_count)" "27"
 check_eq "$(./vcomp_count 6 tiles/kite.tile     | get_count)" "85"
-check_eq "$(./vcomp_count 4 tiles/hat.tile      | get_count)" "38"
+check_eq "$(./vcomp_count 4 tiles/hat.tile      | get_count)" "36"
 
 # ---- VCOMP PRINT (holes only) ----
 check_eq "$(./vcomp_print 6 tiles/monomino.tile | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"

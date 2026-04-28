@@ -109,6 +109,11 @@ static int hidden_connected_lattice(const Coord *hidden,
         reached++;
         for (int i = 0; i < hidden_count; i++) {
             if (seen[i]) continue;
+            if (lattice == TILE_LATTICE_TETRILLE &&
+                hidden[cur].v == 6 &&
+                hidden[i].v == 6) {
+                continue;
+            }
             if (!lattice_coords_adjacent(lattice, hidden[cur], hidden[i])) continue;
             seen[i] = 1;
             queue[qt++] = i;

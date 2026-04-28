@@ -25,6 +25,9 @@ typedef struct {
     int have_indices;
     int index_count;
     int indices[MAX_TILES_PER_RECORD];
+    int have_hidden;
+    int hidden_count;
+    Coord hidden[MAX_TILES_PER_RECORD];
 } RL0Record;
 
 typedef struct {
@@ -215,6 +218,45 @@ static int parse_int_list(const char *text, int *out, int *out_count) {
     return 0;
 }
 
+static int parse_coord_list(const char *text, Coord *out, int *out_count) {
+    const char *p = text;
+    int count = 0;
+
+    if (!expect_char(&p, '[')) return 0;
+    skip_ws(&p);
+    if (*p == ']') {
+        p++;
+        *out_count = 0;
+        return 1;
+    }
+
+    while (count < MAX_TILES_PER_RECORD) {
+        if (!expect_char(&p, '(')) return 0;
+        if (!parse_int(&p, &out[count].v)) return 0;
+        if (!expect_char(&p, ',')) return 0;
+        if (!parse_int(&p, &out[count].x)) return 0;
+        if (!expect_char(&p, ',')) return 0;
+        if (!parse_int(&p, &out[count].y)) return 0;
+        if (!expect_char(&p, ')')) return 0;
+        count++;
+
+        skip_ws(&p);
+        if (*p == ',') {
+            p++;
+            continue;
+        }
+        if (*p == ']') {
+            p++;
+            skip_ws(&p);
+            if (*p != '\0' && *p != '\n' && *p != '\r') return 0;
+            *out_count = count;
+            return 1;
+        }
+        return 0;
+    }
+    return 0;
+}
+
 static void reset_record(RL0Record *r) {
     memset(r, 0, sizeof(*r));
 }
@@ -314,6 +356,15 @@ static void emit_record(const RL0Record *r,
     if (r->have_center) {
         printf("Center\n");
         printf("(%d,%d,%d)\n", r->center.v, r->center.x, r->center.y);
+    }
+    if (r->have_hidden) {
+        printf("Hidden\n");
+        for (int i = 0; i < r->hidden_count; i++) {
+            printf("(%d,%d,%d)\n",
+                   r->hidden[i].v,
+                   r->hidden[i].x,
+                   r->hidden[i].y);
+        }
     }
 }
 
@@ -448,6 +499,12 @@ int main(int argc, char **argv) {
             rec.have_tiles = parse_tile_list(line + 6,
                                              rec.tiles,
                                              &rec.tile_count_list);
+            continue;
+        }
+        if (strncmp(line, "hidden:", 7) == 0) {
+            rec.have_hidden = parse_coord_list(line + 7,
+                                               rec.hidden,
+                                               &rec.hidden_count);
             continue;
         }
         if (strncmp(line, "indices:", 8) == 0) {
