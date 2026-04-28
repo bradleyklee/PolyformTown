@@ -8,6 +8,7 @@
 
 typedef struct {
     int max_n;
+    int next_index;
 } PrintCtx;
 
 static int on_level(int level,
@@ -25,7 +26,21 @@ static int on_level(int level,
         Poly key;
         poly_hash_key_lattice(&states->data[i].poly, tile->lattice, &key);
         if (hash_insert(&printed, &key)) {
+            printf("[%d]\n", ctx->next_index++);
+            printf("Aggregate\n");
             tile_print_imgtable_shape(tile, &states->data[i].poly);
+            printf("Tiles\n");
+            for (int t = 0; t < states->data[i].tile_count; t++) {
+                Poly p = {0};
+                p.cycle_count = 1;
+                p.cycles[0] = states->data[i].tiles[t];
+                tile_print_imgtable_shape(tile, &p);
+            }
+            printf("Hidden\n");
+            for (int h = 0; h < states->data[i].hidden_count; h++) {
+                Coord c = states->data[i].hidden[h];
+                printf("(%d,%d,%d)\n", c.v, c.x, c.y);
+            }
         }
     }
     hash_destroy(&printed);
@@ -53,7 +68,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    PrintCtx ctx = { max_n };
+    PrintCtx ctx = { max_n, 0 };
     run_vcomp_levels(&tile, max_n, 1, live_only, on_level, &ctx);
     return 0;
 }

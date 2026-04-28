@@ -36,6 +36,9 @@ typedef struct {
     Shape *tiles;
     int tile_count;
     int tile_cap;
+    VPoint *hidden;
+    int hidden_count;
+    int hidden_cap;
     int has_center;
     VPoint center;
 } GroupShape;
@@ -431,6 +434,7 @@ static void free_groups(GroupShape *groups, int count) {
     for (int i = 0; i < count; i++) {
         free(groups[i].aggregate);
         free(groups[i].tiles);
+        free(groups[i].hidden);
     }
 }
 
@@ -443,6 +447,19 @@ static int group_add_tile(GroupShape *g, const Shape *s) {
         g->tile_cap = next_cap;
     }
     g->tiles[g->tile_count++] = *s;
+    return 1;
+}
+
+static int group_add_hidden(GroupShape *g, VPoint v) {
+    if (g->hidden_count >= g->hidden_cap) {
+        int next_cap = g->hidden_cap == 0 ? 16 : g->hidden_cap * 2;
+        VPoint *next_hidden =
+            (VPoint *)realloc(g->hidden, (size_t)next_cap * sizeof(VPoint));
+        if (!next_hidden) return 0;
+        g->hidden = next_hidden;
+        g->hidden_cap = next_cap;
+    }
+    g->hidden[g->hidden_count++] = v;
     return 1;
 }
 
@@ -464,7 +481,7 @@ static int read_group_shapes(GroupShape **groups_io, int *group_cap_io,
                              const char *first_line) {
     char line[MAX_LINE];
     int count = 0;
-    int section = 0; /* 1 aggregate, 2 tiles, 3 center */
+    int section = 0; /* 1 aggregate, 2 tiles, 3 center, 4 hidden */
     int cur = -1;
     GroupShape *groups = *groups_io;
     const char *pending = first_line;
@@ -501,6 +518,10 @@ static int read_group_shapes(GroupShape **groups_io, int *group_cap_io,
             section = 3;
             continue;
         }
+        if (strncmp(p, "Hidden", 6) == 0) {
+            section = 4;
+            continue;
+        }
         if (cur < 0) continue;
         if (section == 3) {
             const char *q = p;
@@ -525,6 +546,26 @@ static int read_group_shapes(GroupShape **groups_io, int *group_cap_io,
                 groups[cur].center.v = v;
                 groups[cur].center.x = x;
                 groups[cur].center.y = y;
+            }
+            continue;
+        }
+        if (section == 4) {
+            const char *q = p;
+            VPoint hv;
+            skip_ws(&q);
+            if (*q == '(') {
+                q++;
+                if (parse_int(&q, &hv.v) &&
+                    expect_char(&q, ',') &&
+                    parse_int(&q, &hv.x) &&
+                    expect_char(&q, ',') &&
+                    parse_int(&q, &hv.y)) {
+                    if (!group_add_hidden(&groups[cur], hv)) return -1;
+                }
+            } else if (parse_int(&q, &hv.v) &&
+                       parse_int(&q, &hv.x) &&
+                       parse_int(&q, &hv.y)) {
+                if (!group_add_hidden(&groups[cur], hv)) return -1;
             }
             continue;
         }
@@ -790,6 +831,15 @@ static void emit_group_svg(FILE *fp, const GroupShape *g,
                 "<circle cx=\"%.3f\" cy=\"%.3f\" r=\"2.8\" "
                 "fill=\"#d60000\" stroke=\"white\" stroke-width=\"0.8\"/>\n",
                 cx, cy);
+    }
+    for (int i = 0; i < g->hidden_count; i++) {
+        DPoint h = vertex_to_xy(g->aggregate, g->hidden[i]);
+        double hx = tx + scale * h.x;
+        double hy = ty - scale * h.y;
+        fprintf(fp,
+                "<circle cx=\"%.3f\" cy=\"%.3f\" r=\"2.1\" "
+                "fill=\"#000000\" stroke=\"white\" stroke-width=\"0.6\"/>\n",
+                hx, hy);
     }
 }
 
