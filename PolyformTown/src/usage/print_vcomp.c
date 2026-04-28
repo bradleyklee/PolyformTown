@@ -54,6 +54,6 @@ int main(int argc, char **argv) {
     }
 
     PrintCtx ctx = { max_n };
-    run_vcomp_levels(&tile, max_n, live_only, on_level, &ctx);
+    run_vcomp_levels(&tile, max_n, 1, live_only, on_level, &ctx);
     return 0;
 }
