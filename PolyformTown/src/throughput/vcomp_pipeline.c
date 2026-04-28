@@ -1,15 +1,13 @@
 #include "vcomp_pipeline.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
-#include "core/hash.h"
-#include "core/tetrille.h"
-#include "throughput/vcomp.h"
 #include "core/boundary.h"
-#include "core/attach.h"
+#include "core/hash.h"
+#include "throughput/vcomp.h"
 
 static void sv_init(VCompStateVec *v) {
     v->data = NULL;
@@ -127,7 +125,7 @@ static uint64_t state_hash64(const VCompState *s, const Poly *poly_key) {
     return h;
 }
 
-static void stateset_rehash(StateSet *s, const VCompStateVec *v, size_t new_cap) {
+static void stateset_rehash(StateSet *s, size_t new_cap) {
     StateSetEntry *old = s->data;
     size_t old_cap = s->cap;
     s->data = calloc(new_cap, sizeof(*s->data));
@@ -144,7 +142,6 @@ static void stateset_rehash(StateSet *s, const VCompStateVec *v, size_t new_cap)
         while (s->data[idx].used) idx = (idx + 1) & (s->cap - 1);
         s->data[idx] = old[i];
         s->count++;
-        (void)v;
     }
     free(old);
 }
@@ -155,7 +152,7 @@ static int stateset_insert(StateSet *s,
                            uint64_t hash,
                            size_t index) {
     if ((s->count + 1) * 10 >= s->cap * 7) {
-        stateset_rehash(s, v, s->cap * 2);
+        stateset_rehash(s, s->cap * 2);
     }
 
     size_t slot = (size_t)(hash & (s->cap - 1));
@@ -174,55 +171,52 @@ static int stateset_insert(StateSet *s,
     return 1;
 }
 
-typedef struct {
-    VCompStateVec *levels;
-    StateSet *level_sets;
-    HashTable *poly_seen;
-    const Tile *tile;
-    int lattice;
-    int max_level;
-    int live_only;
-} EmitCtx;
-
-static void collect_emit(const Poly *p,
-                         const Coord *hidden,
-                         int hidden_count,
-                         void *userdata) {
-    EmitCtx *ctx = userdata;
-    if (hidden_count < 0 || hidden_count > VCOMP_MAX_HIDDEN) return;
-    if (hidden_count > ctx->max_level) return;
+static void ingest_raw(const VCompRawState *raw,
+                       const Tile *tile,
+                       int max_level,
+                       int live_only,
+                       VCompStateVec *levels,
+                       StateSet *level_sets,
+                       HashTable *poly_seen) {
+    if (raw->hidden_count < 0 || raw->hidden_count > max_level) return;
 
     VCompState s;
     Poly key;
     uint64_t h;
-    s.poly = *p;
-    s.hidden_count = hidden_count;
-    for (int i = 0; i < hidden_count; i++) s.hidden[i] = hidden[i];
-    qsort(s.hidden, s.hidden_count, sizeof(Coord), coord_cmp);
-    poly_hash_key_lattice(p, ctx->lattice, &key);
-    if (ctx->live_only && !poly_has_live_boundary(p, ctx->tile)) {
-        return;
-    }
-    h = state_hash64(&s, &key);
 
-    if (stateset_insert(&ctx->level_sets[hidden_count],
-                        &ctx->levels[hidden_count],
+    memset(&s, 0, sizeof(s));
+    s.poly = raw->poly;
+    s.hidden_count = raw->hidden_count;
+    for (int i = 0; i < s.hidden_count; i++) s.hidden[i] = raw->hidden[i];
+    qsort(s.hidden, s.hidden_count, sizeof(Coord), coord_cmp);
+    s.tile_count = raw->tile_count;
+    for (int i = 0; i < s.tile_count; i++) s.tiles[i] = raw->tiles[i];
+
+    poly_hash_key_lattice(&s.poly, tile->lattice, &key);
+    if (live_only && !poly_has_live_boundary(&s.poly, tile)) return;
+
+    h = state_hash64(&s, &key);
+    if (stateset_insert(&level_sets[s.hidden_count],
+                        &levels[s.hidden_count],
                         &s,
                         h,
-                        ctx->levels[hidden_count].count)) {
-        sv_push(&ctx->levels[hidden_count], &s);
-        hash_insert(&ctx->poly_seen[hidden_count], &key);
+                        levels[s.hidden_count].count)) {
+        sv_push(&levels[s.hidden_count], &s);
+        hash_insert(&poly_seen[s.hidden_count], &key);
     }
 }
 
 void run_vcomp_levels(const Tile *tile,
                       int max_n,
+                      int track_tiles,
                       int live_only,
                       VCompLevelFn on_level,
                       void *userdata) {
     VCompStateVec levels[VCOMP_MAX_LEVELS];
     StateSet level_sets[VCOMP_MAX_LEVELS];
     HashTable poly_seen[VCOMP_MAX_LEVELS];
+
+    if (max_n >= VCOMP_MAX_LEVELS) max_n = VCOMP_MAX_LEVELS - 1;
 
     for (int i = 0; i <= max_n; i++) {
         sv_init(&levels[i]);
@@ -235,19 +229,16 @@ void run_vcomp_levels(const Tile *tile,
     memset(&seed_state, 0, sizeof(seed_state));
     seed_state.poly.cycle_count = 1;
     seed_state.poly.cycles[0] = tile->base;
+    seed_state.tile_count = 1;
+    seed_state.tiles[0] = tile->base;
     sv_push(&levels[0], &seed_state);
     poly_hash_key_lattice(&seed_state.poly, tile->lattice, &seed_key);
-    stateset_insert(&level_sets[0], &levels[0], &seed_state, state_hash64(&seed_state, &seed_key), 0);
+    stateset_insert(&level_sets[0],
+                    &levels[0],
+                    &seed_state,
+                    state_hash64(&seed_state, &seed_key),
+                    0);
     hash_insert(&poly_seen[0], &seed_key);
-
-    EmitCtx ectx;
-    ectx.levels = levels;
-    ectx.level_sets = level_sets;
-    ectx.poly_seen = poly_seen;
-    ectx.tile = tile;
-    ectx.lattice = tile->lattice;
-    ectx.max_level = max_n;
-    ectx.live_only = live_only;
 
     for (int level = 0; level <= max_n; level++) {
         if (on_level &&
@@ -262,16 +253,33 @@ void run_vcomp_levels(const Tile *tile,
 
         for (size_t i = 0; i < levels[level].count; i++) {
             Coord verts[MAX_VERTS * MAX_CYCLES];
-            int vc = build_boundary_vertices(&levels[level].data[i].poly,
-                                             verts);
+            int vc = build_boundary_vertices(&levels[level].data[i].poly, verts);
+            if (vc < 0) continue;
+
             for (int j = 0; j < vc; j++) {
-                enumerate_vertex_completions(&levels[level].data[i].poly,
-                                             tile,
-                                             verts[j],
-                                             levels[level].data[i].hidden,
-                                             levels[level].data[i].hidden_count,
-                                             collect_emit,
-                                             &ectx);
+                VCompLevels raw;
+                vcomp_levels_init(&raw, max_n);
+                vcomp_enumerate_levels(&levels[level].data[i].poly,
+                                       tile,
+                                       verts[j],
+                                       levels[level].data[i].hidden,
+                                       levels[level].data[i].hidden_count,
+                                       max_n,
+                                       track_tiles,
+                                       &raw);
+
+                for (int lv = level + 1; lv <= max_n; lv++) {
+                    for (size_t r = 0; r < raw.levels[lv].count; r++) {
+                        ingest_raw(&raw.levels[lv].data[r],
+                                   tile,
+                                   max_n,
+                                   live_only,
+                                   levels,
+                                   level_sets,
+                                   poly_seen);
+                    }
+                }
+                vcomp_levels_destroy(&raw);
             }
         }
     }

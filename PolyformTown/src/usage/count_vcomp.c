@@ -37,6 +37,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    run_vcomp_levels(&tile, max_n, live_only, on_level, NULL);
+    run_vcomp_levels(&tile, max_n, 0, live_only, on_level, NULL);
     return 0;
 }

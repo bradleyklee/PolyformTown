@@ -4,70 +4,40 @@
 #include "core/cycle.h"
 #include "core/tile.h"
 
-typedef void (*VCompEmitFn)(const Poly *p,
-                            const Coord *hidden,
-                            int hidden_count,
-                            void *userdata);
-typedef void (*VCompTraceEmitFn)(const Poly *p,
-                                 const Coord *hidden,
-                                 int hidden_count,
-                                 const Cycle *added_tiles,
-                                 int added_tile_count,
-                                 /* index in each aligned tile cycle where
-                                  * the cycle vertex equals target */
-                                 const int *added_indices,
-                                 void *userdata);
+#define VCOMP_MAX_HIDDEN (MAX_VERTS * MAX_CYCLES)
+#define VCOMP_MAX_TRACE MAX_VERTS
+#define VCOMP_MAX_LEVELS 32
 
-void enumerate_vertex_completions(const Poly *base,
-                                  const Tile *tile,
-                                  Coord target,
-                                  const Coord *initial_hidden,
-                                  int initial_hidden_count,
-                                  VCompEmitFn emit,
-                                  void *userdata);
+typedef struct {
+    Poly poly;
+    Coord target;
+    Coord hidden[VCOMP_MAX_HIDDEN];
+    int hidden_count;
+    Cycle tiles[VCOMP_MAX_TRACE];
+    int tile_count;
+} VCompRawState;
 
-void enumerate_vertex_completions_mode(const Poly *base,
-                                       const Tile *tile,
-                                       Coord target,
-                                       const Coord *initial_hidden,
-                                       int initial_hidden_count,
-                                       VCompEmitFn emit,
-                                       void *userdata);
+typedef struct {
+    VCompRawState *data;
+    size_t count;
+    size_t cap;
+} VCompRawVec;
 
-void enumerate_vertex_completions_steps(const Poly *base,
-                                        const Tile *tile,
-                                        Coord target,
-                                        const Coord *initial_hidden,
-                                        int initial_hidden_count,
-                                        int required_steps,
-                                        VCompEmitFn emit,
-                                        void *userdata);
+typedef struct {
+    VCompRawVec levels[VCOMP_MAX_LEVELS];
+    int max_level;
+} VCompLevels;
 
-void enumerate_vertex_completions_steps_trace(const Poly *base,
-                                              const Tile *tile,
-                                              Coord target,
-                                              const Coord *initial_hidden,
-                                              int initial_hidden_count,
-                                              int required_steps,
-                                              VCompTraceEmitFn emit,
-                                              void *userdata);
+void vcomp_levels_init(VCompLevels *out, int max_level);
+void vcomp_levels_destroy(VCompLevels *out);
 
-int has_vertex_completion(const Poly *base,
-                          const Tile *tile,
-                          Coord target,
-                          const Coord *initial_hidden,
-                          int initial_hidden_count);
+void vcomp_enumerate_levels(const Poly *base,
+                            const Tile *tile,
+                            Coord target,
+                            const Coord *initial_hidden,
+                            int initial_hidden_count,
+                            int max_hidden,
+                            int track_tiles,
+                            VCompLevels *out);
 
-int has_vertex_completion_local(const Poly *base,
-                                const Tile *tile,
-                                Coord target,
-                                const Coord *initial_hidden,
-                                int initial_hidden_count);
-
-int has_vertex_completion_steps(const Poly *base,
-                                const Tile *tile,
-                                Coord target,
-                                const Coord *initial_hidden,
-                                int initial_hidden_count,
-                                int required_steps);
 #endif

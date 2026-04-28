@@ -45,8 +45,8 @@ tile_to_imgtable: $(SRC)/usage/tile_to_imgtable.o $(SRC)/core/tile.o \
 		$(SRC)/core/tile.o $(SRC)/core/cycle.o \
 		$(SRC)/core/tetrille.o $(SRC)/core/lattice.o
 
-rl0_generate: $(SRC)/rl0/generate_rl0.o $(CORE) $(SRC)/throughput/vcomp.o
-	$(CC) $(CFLAGS) -o $@ $(SRC)/rl0/generate_rl0.o $(CORE) $(SRC)/throughput/vcomp.o
+rl0_generate: $(SRC)/rl0/generate_rl0.o $(CORE) $(VCOMP_SURFACE)
+	$(CC) $(CFLAGS) -o $@ $(SRC)/rl0/generate_rl0.o $(CORE) $(VCOMP_SURFACE)
 
 rl0_depict: $(SRC)/usage/depict_rl0.o $(CORE) $(SRC)/throughput/vcomp.o
 	$(CC) $(CFLAGS) -o $@ $(SRC)/usage/depict_rl0.o $(CORE) $(SRC)/throughput/vcomp.o
