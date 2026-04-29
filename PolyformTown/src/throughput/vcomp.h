@@ -13,6 +13,8 @@ typedef struct {
     Coord target;
     Coord hidden[VCOMP_MAX_HIDDEN];
     int hidden_count;
+    Coord ports[VCOMP_MAX_HIDDEN];
+    int port_count;
     Cycle tiles[VCOMP_MAX_TRACE];
     int tile_count;
 } VCompRawState;
@@ -36,6 +38,8 @@ void vcomp_enumerate_levels(const Poly *base,
                             Coord target,
                             const Coord *initial_hidden,
                             int initial_hidden_count,
+                            const Coord *initial_ports,
+                            int initial_port_count,
                             const Cycle *initial_tiles,
                             int initial_tile_count,
                             int max_hidden,
