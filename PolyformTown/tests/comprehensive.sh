@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-set -e
+set +e
 
 i=1
+fails=0
 check_eq() {
   if [[ "$1" != "$2" ]]; then
     echo "FAIL [$i]: expected $2 got $1"
-    exit 1
+    fails=$((fails+1))
+  else
+    echo "PASS [$i]"
   fi
   i=$((i+1))
 }
@@ -62,4 +65,8 @@ check_eq "$(./vcomp_print 4 tiles/hat.tile      | awk '/^Aggregate$/{getline;pri
 
 
 
+if [[ "$fails" -gt 0 ]]; then
+  echo "TOTAL FAILS: $fails"
+  exit 1
+fi
 echo 0

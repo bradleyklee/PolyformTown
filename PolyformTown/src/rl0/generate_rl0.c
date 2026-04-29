@@ -13,11 +13,20 @@
 #define RL0_MAX_TRACE MAX_VERTS
 
 typedef struct {
+    int valence;
+    int tile_count;
+    Poly poly;
+} RL0SeenKey;
+
+typedef struct {
     FILE *fp;
     int lattice;
     const Tile *tile;
     Coord target;
     int record_no;
+    RL0SeenKey *seen;
+    size_t seen_count;
+    size_t seen_cap;
 } RL0Ctx;
 
 static int coord_less_local(Coord a, Coord b) {
@@ -86,6 +95,41 @@ static int cycle_vertex_index(const Cycle *c, Coord q) {
     return -1;
 }
 
+static int poly_equal_local(const Poly *a, const Poly *b) {
+    if (a->cycle_count != b->cycle_count) return 0;
+    for (int i = 0; i < a->cycle_count; i++) {
+        if (a->cycles[i].n != b->cycles[i].n) return 0;
+        for (int j = 0; j < a->cycles[i].n; j++) {
+            if (!coord_eq(a->cycles[i].v[j], b->cycles[i].v[j])) return 0;
+        }
+    }
+    return 1;
+}
+
+static int seen_has(const RL0Ctx *ctx, int valence, int tile_count, const Poly *poly) {
+    for (size_t i = 0; i < ctx->seen_count; i++) {
+        if (ctx->seen[i].valence != valence) continue;
+        if (ctx->seen[i].tile_count != tile_count) continue;
+        if (poly_equal_local(&ctx->seen[i].poly, poly)) return 1;
+    }
+    return 0;
+}
+
+static int seen_add(RL0Ctx *ctx, int valence, int tile_count, const Poly *poly) {
+    if (ctx->seen_count == ctx->seen_cap) {
+        size_t nc = ctx->seen_cap ? (ctx->seen_cap * 2) : 128;
+        RL0SeenKey *n = realloc(ctx->seen, nc * sizeof(*ctx->seen));
+        if (!n) return 0;
+        ctx->seen = n;
+        ctx->seen_cap = nc;
+    }
+    ctx->seen[ctx->seen_count].valence = valence;
+    ctx->seen[ctx->seen_count].tile_count = tile_count;
+    ctx->seen[ctx->seen_count].poly = *poly;
+    ctx->seen_count++;
+    return 1;
+}
+
 static void emit_raw_completion(const VCompRawState *raw, RL0Ctx *ctx) {
     int indices[RL0_MAX_TRACE];
     int total_tile_count = raw->tile_count;
@@ -102,6 +146,8 @@ static void emit_raw_completion(const VCompRawState *raw, RL0Ctx *ctx) {
         (center.v == 3 || center.v == 4 || center.v == 6)) {
         valence = center.v;
     }
+    if (seen_has(ctx, valence, total_tile_count, &raw->poly)) return;
+    if (!seen_add(ctx, valence, total_tile_count, &raw->poly)) return;
 
     ctx->record_no++;
     fprintf(ctx->fp, "---[%d]---\n", ctx->record_no);
@@ -173,6 +219,9 @@ int main(int argc, char **argv) {
     ctx.lattice = tile.lattice;
     ctx.tile = &tile;
     ctx.record_no = 0;
+    ctx.seen = NULL;
+    ctx.seen_count = 0;
+    ctx.seen_cap = 0;
 
     for (int i = 0; i < vc; i++) {
         VCompLevels raw;
@@ -199,5 +248,6 @@ int main(int argc, char **argv) {
     }
 
     fclose(fp);
+    free(ctx.seen);
     return 0;
 }

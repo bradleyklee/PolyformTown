@@ -222,6 +222,7 @@ void run_vcomp_levels(const Tile *tile,
     VCompStateVec levels[VCOMP_MAX_LEVELS];
     StateSet level_sets[VCOMP_MAX_LEVELS];
     HashTable poly_seen[VCOMP_MAX_LEVELS];
+    (void)track_tiles;
     int enum_track_tiles = 1;
 
     if (max_n >= VCOMP_MAX_LEVELS) max_n = VCOMP_MAX_LEVELS - 1;
