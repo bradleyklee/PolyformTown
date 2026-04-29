@@ -112,8 +112,8 @@ static int edge_in_tiles(const Cycle *tiles,
 
 static int hidden_port_connected(const Coord *hidden,
                                  int hidden_count,
-                                 const Coord *ports,
-                                 int port_count,
+                                 const Coord *ports_new_hidden,
+                                 int port_new_hidden_count,
                                  const Cycle *tiles,
                                  int tile_count) {
     int seen[MAX_BOUNDARY_VERTS] = {0};
@@ -124,17 +124,17 @@ static int hidden_port_connected(const Coord *hidden,
 
     if (hidden_count <= 1) return 1;
     if (hidden_count > MAX_BOUNDARY_VERTS) return 0;
-    if (port_count <= 0 || tile_count <= 0) return 0;
+    if (port_new_hidden_count <= 0 || tile_count <= 0) return 0;
 
     seen[0] = 1;
     queue[qt++] = 0;
     while (qh < qt) {
         int cur = queue[qh++];
-        for (int p = 0; p < port_count; p++) {
+        for (int p = 0; p < port_new_hidden_count; p++) {
             if (edge_in_tiles(tiles,
                               tile_count,
                               hidden[cur],
-                              ports[p])) {
+                              ports_new_hidden[p])) {
                 touches_port = 1;
                 break;
             }
@@ -157,6 +157,33 @@ static int hidden_port_connected(const Coord *hidden,
         if (!seen[i]) return 0;
     }
     return 1;
+}
+
+static int build_ports_from_boundary_hidden(const Coord *boundary,
+                                            int boundary_count,
+                                            const Coord *hidden,
+                                            int hidden_count,
+                                            const Cycle *tiles,
+                                            int tile_count,
+                                            Coord *out_ports) {
+    int out_count = 0;
+    for (int i = 0; i < boundary_count; i++) {
+        Coord b = boundary[i];
+        int is_port = 0;
+        if (coord_in_list(hidden, hidden_count, b)) continue;
+        for (int h = 0; h < hidden_count; h++) {
+            if (edge_in_tiles(tiles, tile_count, b, hidden[h])) {
+                is_port = 1;
+                break;
+            }
+        }
+        if (!is_port) continue;
+        if (!coord_in_list(out_ports, out_count, b)) {
+            if (out_count >= MAX_BOUNDARY_VERTS) return -1;
+            out_ports[out_count++] = b;
+        }
+    }
+    return out_count;
 }
 
 static int build_next_hidden(const Coord *prev_boundary,
@@ -257,6 +284,8 @@ static void normalize_payload(Poly *p,
                               Coord *target,
                               Coord *hidden,
                               int hidden_count,
+                              Coord *ports,
+                              int port_count,
                               Cycle *tiles,
                               int tile_count,
                               int lattice) {
@@ -282,6 +311,9 @@ static void normalize_payload(Poly *p,
         for (int i = 0; i < hidden_count; i++) {
             hidden[i] = coord_translate_lattice(hidden[i], lattice, tx, ty);
         }
+        for (int i = 0; i < port_count; i++) {
+            ports[i] = coord_translate_lattice(ports[i], lattice, tx, ty);
+        }
         for (int i = 0; i < tile_count; i++) {
             tetrille_translate_cycle(&tiles[i], tx, ty);
         }
@@ -302,6 +334,9 @@ static void normalize_payload(Poly *p,
     *target = coord_translate_lattice(*target, lattice, -minx, -miny);
     for (int i = 0; i < hidden_count; i++) {
         hidden[i] = coord_translate_lattice(hidden[i], lattice, -minx, -miny);
+    }
+    for (int i = 0; i < port_count; i++) {
+        ports[i] = coord_translate_lattice(ports[i], lattice, -minx, -miny);
     }
     for (int i = 0; i < tile_count; i++) {
         cycle_translate(&tiles[i], -minx, -miny);
@@ -324,12 +359,17 @@ static void canonicalize_result(VCompRawState *s, int lattice) {
     for (int t = 0; t < tcount; t++) {
         VCompRawState cur = {0};
         int unique_hidden = 0;
+        int unique_ports = 0;
 
         poly_transform_lattice(&s->poly, &cur.poly, lattice, t);
         cur.target = coord_transform_lattice(s->target, lattice, t);
         cur.hidden_count = s->hidden_count;
         for (int i = 0; i < s->hidden_count; i++) {
             cur.hidden[i] = coord_transform_lattice(s->hidden[i], lattice, t);
+        }
+        cur.port_count = s->port_count;
+        for (int i = 0; i < s->port_count; i++) {
+            cur.ports[i] = coord_transform_lattice(s->ports[i], lattice, t);
         }
         cur.tile_count = s->tile_count;
         for (int i = 0; i < s->tile_count; i++) {
@@ -340,6 +380,8 @@ static void canonicalize_result(VCompRawState *s, int lattice) {
                           &cur.target,
                           cur.hidden,
                           cur.hidden_count,
+                          cur.ports,
+                          cur.port_count,
                           cur.tiles,
                           cur.tile_count,
                           lattice);
@@ -352,6 +394,13 @@ static void canonicalize_result(VCompRawState *s, int lattice) {
             }
         }
         cur.hidden_count = unique_hidden;
+        qsort(cur.ports, (size_t)cur.port_count, sizeof(Coord), coord_cmp);
+        for (int i = 0; i < cur.port_count; i++) {
+            if (i == 0 || !coord_eq(cur.ports[i], cur.ports[i - 1])) {
+                cur.ports[unique_ports++] = cur.ports[i];
+            }
+        }
+        cur.port_count = unique_ports;
 
         if (first || poly_less(&cur.poly, &best.poly)) {
             best = cur;
@@ -365,6 +414,8 @@ static void dfs_levels(const Poly *p,
                        const VCompCtx *ctx,
                        const Coord *hidden,
                        int hidden_count,
+                       const Coord *ports,
+                       int port_count,
                        const Coord *prev_boundary,
                        int prev_boundary_count,
                        Cycle *trace_tiles,
@@ -383,9 +434,15 @@ static void dfs_levels(const Poly *p,
                 Poly grown;
                 Cycle aligned;
                 Coord next_hidden[MAX_BOUNDARY_VERTS];
+                Coord next_ports[MAX_BOUNDARY_VERTS];
                 Coord grown_boundary[MAX_BOUNDARY_VERTS];
+                Coord ports_new_hidden[MAX_BOUNDARY_VERTS];
+                Coord gained_ports[MAX_BOUNDARY_VERTS];
                 int next_hidden_count;
+                int next_port_count = 0;
+                int gained_port_count = 0;
                 int grown_boundary_count;
+                int new_hidden_port_count = 0;
                 int target_present;
 
                 if (!try_attach_tile_poly_ex(p,
@@ -408,6 +465,49 @@ static void dfs_levels(const Poly *p,
                                                       next_hidden);
                 if (grown_boundary_count < 0 || next_hidden_count < 0) continue;
                 if (next_hidden_count > ctx->max_hidden) continue;
+                if (ctx->track_tiles) {
+                    if (trace_tile_count >= VCOMP_MAX_TRACE) continue;
+                    Cycle *path_tiles = trace_tiles;
+                    int path_tile_count = trace_tile_count + 1;
+                    path_tiles[trace_tile_count] = aligned;
+                    gained_port_count = build_ports_from_boundary_hidden(grown_boundary,
+                                                                         grown_boundary_count,
+                                                                         next_hidden,
+                                                                         next_hidden_count,
+                                                                         path_tiles,
+                                                                         path_tile_count,
+                                                                         gained_ports);
+                    if (gained_port_count < 0) continue;
+
+                    for (int p = 0; p < port_count; p++) {
+                        Coord q = ports[p];
+                        if (!coord_in_list(grown_boundary, grown_boundary_count, q)) {
+                            if (!coord_in_list(ports_new_hidden,
+                                               new_hidden_port_count,
+                                               q)) {
+                                ports_new_hidden[new_hidden_port_count++] = q;
+                            }
+                            continue;
+                        }
+                        if (coord_in_list(next_hidden, next_hidden_count, q)) {
+                            if (!coord_in_list(ports_new_hidden,
+                                               new_hidden_port_count,
+                                               q)) {
+                                ports_new_hidden[new_hidden_port_count++] = q;
+                            }
+                            continue;
+                        }
+                        if (!coord_in_list(next_ports, next_port_count, q)) {
+                            next_ports[next_port_count++] = q;
+                        }
+                    }
+                    for (int p = 0; p < gained_port_count; p++) {
+                        Coord q = gained_ports[p];
+                        if (!coord_in_list(next_ports, next_port_count, q)) {
+                            next_ports[next_port_count++] = q;
+                        }
+                    }
+                }
 
                 target_present = point_on_poly_boundary(&grown,
                                                         ctx->target,
@@ -415,14 +515,16 @@ static void dfs_levels(const Poly *p,
                 if (!target_present) {
                     if (next_hidden_count > ctx->base_hidden_count) {
                         VCompRawState state;
-                        Coord ports[MAX_BOUNDARY_VERTS];
-                        int port_count = 0;
                         memset(&state, 0, sizeof(state));
                         state.poly = grown;
                         state.target = ctx->target;
                         state.hidden_count = next_hidden_count;
                         for (int i = 0; i < next_hidden_count; i++) {
                             state.hidden[i] = next_hidden[i];
+                        }
+                        state.port_count = next_port_count;
+                        for (int i = 0; i < next_port_count; i++) {
+                            state.ports[i] = next_ports[i];
                         }
 
                         if (ctx->track_tiles) {
@@ -432,21 +534,10 @@ static void dfs_levels(const Poly *p,
                             state.tiles[trace_tile_count] = aligned;
                             state.tile_count = trace_tile_count + 1;
 
-                            for (int i = 0; i < grown_boundary_count; i++) {
-                                Coord q = grown_boundary[i];
-                                if (coord_in_list(next_hidden,
-                                                  next_hidden_count,
-                                                  q)) {
-                                    continue;
-                                }
-                                if (!coord_in_list(ports, port_count, q)) {
-                                    ports[port_count++] = q;
-                                }
-                            }
                             if (!hidden_port_connected(state.hidden,
                                                        state.hidden_count,
-                                                       ports,
-                                                       port_count,
+                                                       ports_new_hidden,
+                                                       new_hidden_port_count,
                                                        state.tiles,
                                                        state.tile_count)) {
                                 continue;
@@ -468,6 +559,8 @@ static void dfs_levels(const Poly *p,
                                ctx,
                                next_hidden,
                                next_hidden_count,
+                               next_ports,
+                               next_port_count,
                                grown_boundary,
                                grown_boundary_count,
                                trace_tiles,
@@ -477,6 +570,8 @@ static void dfs_levels(const Poly *p,
                                ctx,
                                next_hidden,
                                next_hidden_count,
+                               next_ports,
+                               next_port_count,
                                grown_boundary,
                                grown_boundary_count,
                                trace_tiles,
@@ -492,6 +587,8 @@ void vcomp_enumerate_levels(const Poly *base,
                             Coord target,
                             const Coord *initial_hidden,
                             int initial_hidden_count,
+                            const Coord *initial_ports,
+                            int initial_port_count,
                             const Cycle *initial_tiles,
                             int initial_tile_count,
                             int max_hidden,
@@ -508,6 +605,9 @@ void vcomp_enumerate_levels(const Poly *base,
     if (max_hidden < 0) return;
     if (max_hidden > out->max_level) max_hidden = out->max_level;
     if (initial_hidden_count < 0 || initial_hidden_count > VCOMP_MAX_HIDDEN) {
+        return;
+    }
+    if (initial_port_count < 0 || initial_port_count > VCOMP_MAX_HIDDEN) {
         return;
     }
     if (initial_tile_count < 0 || initial_tile_count > VCOMP_MAX_TRACE) {
@@ -546,6 +646,8 @@ void vcomp_enumerate_levels(const Poly *base,
                &ctx,
                initial_hidden,
                initial_hidden_count,
+               initial_ports,
+               initial_port_count,
                initial_boundary,
                initial_boundary_count,
                trace_tiles,

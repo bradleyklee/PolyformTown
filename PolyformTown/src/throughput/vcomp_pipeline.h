@@ -11,6 +11,9 @@ typedef struct {
     Poly poly;
     Coord hidden[VCOMP_MAX_HIDDEN];
     int hidden_count;
+    Coord ports[VCOMP_MAX_HIDDEN];
+    int port_count;
+    int use_ports_identity;
     Cycle tiles[VCOMP_MAX_TILES];
     int tile_count;
 } VCompState;

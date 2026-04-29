@@ -56,7 +56,14 @@ static int poly_equal_local(const Poly *a, const Poly *b) {
 }
 
 static int state_equal(const VCompState *a, const VCompState *b) {
-    return poly_equal_local(&a->poly, &b->poly);
+    if (!poly_equal_local(&a->poly, &b->poly)) return 0;
+    if (!a->use_ports_identity && !b->use_ports_identity) return 1;
+    if (a->use_ports_identity != b->use_ports_identity) return 0;
+    if (a->port_count != b->port_count) return 0;
+    for (int i = 0; i < a->port_count; i++) {
+        if (!coord_eq(a->ports[i], b->ports[i])) return 0;
+    }
+    return 1;
 }
 
 typedef struct {
@@ -110,8 +117,15 @@ static uint64_t poly_hash64(const Poly *p) {
 }
 
 static uint64_t state_hash64(const VCompState *s, const Poly *poly_key) {
-    (void)s;
-    return poly_hash64(poly_key);
+    uint64_t h = poly_hash64(poly_key);
+    if (!s->use_ports_identity) return h;
+    h = mix_u64(h, (uint64_t)s->port_count);
+    for (int i = 0; i < s->port_count; i++) {
+        h = mix_u64(h, (uint64_t)(uint32_t)s->ports[i].v);
+        h = mix_u64(h, (uint64_t)(uint32_t)s->ports[i].x);
+        h = mix_u64(h, (uint64_t)(uint32_t)s->ports[i].y);
+    }
+    return h;
 }
 
 static void stateset_rehash(StateSet *s, size_t new_cap) {
@@ -178,6 +192,10 @@ static void ingest_raw(const VCompRawState *raw,
     s.hidden_count = raw->hidden_count;
     for (int i = 0; i < s.hidden_count; i++) s.hidden[i] = raw->hidden[i];
     qsort(s.hidden, s.hidden_count, sizeof(Coord), coord_cmp);
+    s.use_ports_identity = (tile->lattice == TILE_LATTICE_TETRILLE);
+    s.port_count = raw->port_count;
+    for (int i = 0; i < s.port_count; i++) s.ports[i] = raw->ports[i];
+    qsort(s.ports, s.port_count, sizeof(Coord), coord_cmp);
     s.tile_count = raw->tile_count;
     for (int i = 0; i < s.tile_count; i++) s.tiles[i] = raw->tiles[i];
 
@@ -204,6 +222,7 @@ void run_vcomp_levels(const Tile *tile,
     VCompStateVec levels[VCOMP_MAX_LEVELS];
     StateSet level_sets[VCOMP_MAX_LEVELS];
     HashTable poly_seen[VCOMP_MAX_LEVELS];
+    int enum_track_tiles = 1;
 
     if (max_n >= VCOMP_MAX_LEVELS) max_n = VCOMP_MAX_LEVELS - 1;
 
@@ -246,6 +265,18 @@ void run_vcomp_levels(const Tile *tile,
             if (vc < 0) continue;
 
             for (int j = 0; j < vc; j++) {
+                if (track_tiles &&
+                    tile->lattice == TILE_LATTICE_TETRILLE &&
+                    level > 0) {
+                    int allowed = 0;
+                    for (int p = 0; p < levels[level].data[i].port_count; p++) {
+                        if (coord_eq(verts[j], levels[level].data[i].ports[p])) {
+                            allowed = 1;
+                            break;
+                        }
+                    }
+                    if (!allowed) continue;
+                }
                 VCompLevels raw;
                 vcomp_levels_init(&raw, max_n);
                 vcomp_enumerate_levels(&levels[level].data[i].poly,
@@ -253,10 +284,12 @@ void run_vcomp_levels(const Tile *tile,
                                        verts[j],
                                        levels[level].data[i].hidden,
                                        levels[level].data[i].hidden_count,
+                                       levels[level].data[i].ports,
+                                       levels[level].data[i].port_count,
                                        levels[level].data[i].tiles,
                                        levels[level].data[i].tile_count,
                                        max_n,
-                                       track_tiles,
+                                       enum_track_tiles,
                                        &raw);
 
                 for (int lv = level + 1; lv <= max_n; lv++) {
