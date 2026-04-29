@@ -17,6 +17,7 @@ typedef struct {
     int base_hidden_count;
     int max_hidden;
     int track_tiles;
+    int emit_tiles;
     HashTable *seen;
     VCompLevels *out;
 } VCompCtx;
@@ -115,7 +116,8 @@ static int hidden_port_connected(const Coord *hidden,
                                  const Coord *ports_new_hidden,
                                  int port_new_hidden_count,
                                  const Cycle *tiles,
-                                 int tile_count) {
+                                 int tile_count,
+                                 int require_port_contact) {
     int seen[MAX_BOUNDARY_VERTS] = {0};
     int queue[MAX_BOUNDARY_VERTS];
     int qh = 0;
@@ -124,7 +126,7 @@ static int hidden_port_connected(const Coord *hidden,
 
     if (hidden_count <= 1) return 1;
     if (hidden_count > MAX_BOUNDARY_VERTS) return 0;
-    if (port_new_hidden_count <= 0 || tile_count <= 0) return 0;
+    if (tile_count <= 0) return 0;
 
     seen[0] = 1;
     queue[qt++] = 0;
@@ -152,7 +154,7 @@ static int hidden_port_connected(const Coord *hidden,
         }
     }
 
-    if (!touches_port) return 0;
+    if (require_port_contact && !touches_port) return 0;
     for (int i = 0; i < hidden_count; i++) {
         if (!seen[i]) return 0;
     }
@@ -433,17 +435,32 @@ static void dfs_levels(const Poly *p,
             for (int te = 0; te < tv->n; te++) {
                 Poly grown;
                 Cycle aligned;
-                Coord next_hidden[MAX_BOUNDARY_VERTS];
-                Coord next_ports[MAX_BOUNDARY_VERTS];
-                Coord grown_boundary[MAX_BOUNDARY_VERTS];
-                Coord ports_new_hidden[MAX_BOUNDARY_VERTS];
-                Coord gained_ports[MAX_BOUNDARY_VERTS];
+                Coord *next_hidden = NULL;
+                Coord *next_ports = NULL;
+                Coord *grown_boundary = NULL;
+                Coord *ports_new_hidden = NULL;
+                Coord *gained_ports = NULL;
                 int next_hidden_count;
                 int next_port_count = 0;
                 int gained_port_count = 0;
                 int grown_boundary_count;
                 int new_hidden_port_count = 0;
                 int target_present;
+
+                next_hidden = malloc(sizeof(Coord) * MAX_BOUNDARY_VERTS);
+                next_ports = malloc(sizeof(Coord) * MAX_BOUNDARY_VERTS);
+                grown_boundary = malloc(sizeof(Coord) * MAX_BOUNDARY_VERTS);
+                ports_new_hidden = malloc(sizeof(Coord) * MAX_BOUNDARY_VERTS);
+                gained_ports = malloc(sizeof(Coord) * MAX_BOUNDARY_VERTS);
+                if (!next_hidden || !next_ports || !grown_boundary ||
+                    !ports_new_hidden || !gained_ports) {
+                    free(next_hidden);
+                    free(next_ports);
+                    free(grown_boundary);
+                    free(ports_new_hidden);
+                    free(gained_ports);
+                    continue;
+                }
 
                 if (!try_attach_tile_poly_ex(p,
                                              tv,
@@ -452,7 +469,7 @@ static void dfs_levels(const Poly *p,
                                              te,
                                              &grown,
                                              &aligned)) {
-                    continue;
+                    goto te_cleanup;
                 }
 
                 grown_boundary_count = build_boundary_vertices(&grown, grown_boundary);
@@ -463,10 +480,12 @@ static void dfs_levels(const Poly *p,
                                                       hidden_count,
                                                       ctx->tile->lattice,
                                                       next_hidden);
-                if (grown_boundary_count < 0 || next_hidden_count < 0) continue;
-                if (next_hidden_count > ctx->max_hidden) continue;
+                if (grown_boundary_count < 0 || next_hidden_count < 0) {
+                    goto te_cleanup;
+                }
+                if (next_hidden_count > ctx->max_hidden) goto te_cleanup;
                 if (ctx->track_tiles) {
-                    if (trace_tile_count >= VCOMP_MAX_TRACE) continue;
+                    if (trace_tile_count >= VCOMP_MAX_TRACE) goto te_cleanup;
                     Cycle *path_tiles = trace_tiles;
                     int path_tile_count = trace_tile_count + 1;
                     path_tiles[trace_tile_count] = aligned;
@@ -477,7 +496,7 @@ static void dfs_levels(const Poly *p,
                                                                          path_tiles,
                                                                          path_tile_count,
                                                                          gained_ports);
-                    if (gained_port_count < 0) continue;
+                    if (gained_port_count < 0) goto te_cleanup;
 
                     for (int p = 0; p < port_count; p++) {
                         Coord q = ports[p];
@@ -485,6 +504,9 @@ static void dfs_levels(const Poly *p,
                             if (!coord_in_list(ports_new_hidden,
                                                new_hidden_port_count,
                                                q)) {
+                                if (new_hidden_port_count >= MAX_BOUNDARY_VERTS) {
+                                    goto te_cleanup;
+                                }
                                 ports_new_hidden[new_hidden_port_count++] = q;
                             }
                             continue;
@@ -493,17 +515,26 @@ static void dfs_levels(const Poly *p,
                             if (!coord_in_list(ports_new_hidden,
                                                new_hidden_port_count,
                                                q)) {
+                                if (new_hidden_port_count >= MAX_BOUNDARY_VERTS) {
+                                    goto te_cleanup;
+                                }
                                 ports_new_hidden[new_hidden_port_count++] = q;
                             }
                             continue;
                         }
                         if (!coord_in_list(next_ports, next_port_count, q)) {
+                            if (next_port_count >= MAX_BOUNDARY_VERTS) {
+                                goto te_cleanup;
+                            }
                             next_ports[next_port_count++] = q;
                         }
                     }
                     for (int p = 0; p < gained_port_count; p++) {
                         Coord q = gained_ports[p];
                         if (!coord_in_list(next_ports, next_port_count, q)) {
+                            if (next_port_count >= MAX_BOUNDARY_VERTS) {
+                                goto te_cleanup;
+                            }
                             next_ports[next_port_count++] = q;
                         }
                     }
@@ -527,21 +558,24 @@ static void dfs_levels(const Poly *p,
                             state.ports[i] = next_ports[i];
                         }
 
-                        if (ctx->track_tiles) {
+                        if (ctx->emit_tiles) {
                             for (int i = 0; i < trace_tile_count; i++) {
                                 state.tiles[i] = trace_tiles[i];
                             }
                             state.tiles[trace_tile_count] = aligned;
                             state.tile_count = trace_tile_count + 1;
-
-                            if (!hidden_port_connected(state.hidden,
-                                                       state.hidden_count,
-                                                       ports_new_hidden,
-                                                       new_hidden_port_count,
-                                                       state.tiles,
-                                                       state.tile_count)) {
-                                continue;
-                            }
+                        } else {
+                            state.tile_count = 0;
+                        }
+                        if (!hidden_port_connected(state.hidden,
+                                                   state.hidden_count,
+                                                   ports_new_hidden,
+                                                   new_hidden_port_count,
+                                                   trace_tiles,
+                                                   trace_tile_count + 1,
+                                                   (hidden_count > 0 ||
+                                                    port_count > 0))) {
+                            goto te_cleanup;
                         }
 
                         canonicalize_result(&state, ctx->tile->lattice);
@@ -550,7 +584,7 @@ static void dfs_levels(const Poly *p,
                             raw_vec_push(&ctx->out->levels[state.hidden_count], &state);
                         }
                     }
-                    continue;
+                    goto te_cleanup;
                 }
 
                 if (ctx->track_tiles && trace_tile_count < VCOMP_MAX_TRACE) {
@@ -577,6 +611,12 @@ static void dfs_levels(const Poly *p,
                                trace_tiles,
                                trace_tile_count);
                 }
+te_cleanup:
+                free(next_hidden);
+                free(next_ports);
+                free(grown_boundary);
+                free(ports_new_hidden);
+                free(gained_ports);
             }
         }
     }
@@ -620,6 +660,7 @@ void vcomp_enumerate_levels(const Poly *base,
     ctx.base_hidden_count = initial_hidden_count;
     ctx.max_hidden = max_hidden;
     ctx.track_tiles = track_tiles;
+    ctx.emit_tiles = track_tiles;
     ctx.seen = &seen;
     ctx.out = out;
     hash_init(&seen, 1024);
