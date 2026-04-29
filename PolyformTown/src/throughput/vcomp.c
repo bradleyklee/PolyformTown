@@ -92,34 +92,71 @@ static int point_on_poly_boundary(const Poly *p, Coord q, int lattice) {
     return 0;
 }
 
-static int hidden_connected_lattice(const Coord *hidden,
-                                    int hidden_count,
-                                    int lattice) {
-    int queue[MAX_BOUNDARY_VERTS];
+static int edge_in_tiles(const Cycle *tiles,
+                         int tile_count,
+                         Coord a,
+                         Coord b) {
+    for (int i = 0; i < tile_count; i++) {
+        const Cycle *c = &tiles[i];
+        for (int j = 0; j < c->n; j++) {
+            Coord u = c->v[j];
+            Coord v = c->v[(j + 1) % c->n];
+            if ((coord_eq(u, a) && coord_eq(v, b)) ||
+                (coord_eq(u, b) && coord_eq(v, a))) {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+static int hidden_port_connected(const Coord *hidden,
+                                 int hidden_count,
+                                 const Coord *ports,
+                                 int port_count,
+                                 const Cycle *tiles,
+                                 int tile_count) {
     int seen[MAX_BOUNDARY_VERTS] = {0};
+    int queue[MAX_BOUNDARY_VERTS];
     int qh = 0;
     int qt = 0;
-    int reached = 0;
-    if (hidden_count > MAX_BOUNDARY_VERTS) return 0;
+    int touches_port = 0;
+
     if (hidden_count <= 1) return 1;
+    if (hidden_count > MAX_BOUNDARY_VERTS) return 0;
+    if (port_count <= 0 || tile_count <= 0) return 0;
+
     seen[0] = 1;
     queue[qt++] = 0;
     while (qh < qt) {
         int cur = queue[qh++];
-        reached++;
+        for (int p = 0; p < port_count; p++) {
+            if (edge_in_tiles(tiles,
+                              tile_count,
+                              hidden[cur],
+                              ports[p])) {
+                touches_port = 1;
+                break;
+            }
+        }
         for (int i = 0; i < hidden_count; i++) {
             if (seen[i]) continue;
-            if (lattice == TILE_LATTICE_TETRILLE &&
-                hidden[cur].v == 6 &&
-                hidden[i].v == 6) {
+            if (!edge_in_tiles(tiles,
+                               tile_count,
+                               hidden[cur],
+                               hidden[i])) {
                 continue;
             }
-            if (!lattice_coords_adjacent(lattice, hidden[cur], hidden[i])) continue;
             seen[i] = 1;
             queue[qt++] = i;
         }
     }
-    return reached == hidden_count;
+
+    if (!touches_port) return 0;
+    for (int i = 0; i < hidden_count; i++) {
+        if (!seen[i]) return 0;
+    }
+    return 1;
 }
 
 static int build_next_hidden(const Coord *prev_boundary,
@@ -371,11 +408,6 @@ static void dfs_levels(const Poly *p,
                                                       next_hidden);
                 if (grown_boundary_count < 0 || next_hidden_count < 0) continue;
                 if (next_hidden_count > ctx->max_hidden) continue;
-                if (!hidden_connected_lattice(next_hidden,
-                                              next_hidden_count,
-                                              ctx->tile->lattice)) {
-                    continue;
-                }
 
                 target_present = point_on_poly_boundary(&grown,
                                                         ctx->target,
@@ -383,6 +415,8 @@ static void dfs_levels(const Poly *p,
                 if (!target_present) {
                     if (next_hidden_count > ctx->base_hidden_count) {
                         VCompRawState state;
+                        Coord ports[MAX_BOUNDARY_VERTS];
+                        int port_count = 0;
                         memset(&state, 0, sizeof(state));
                         state.poly = grown;
                         state.target = ctx->target;
@@ -397,6 +431,26 @@ static void dfs_levels(const Poly *p,
                             }
                             state.tiles[trace_tile_count] = aligned;
                             state.tile_count = trace_tile_count + 1;
+
+                            for (int i = 0; i < grown_boundary_count; i++) {
+                                Coord q = grown_boundary[i];
+                                if (coord_in_list(next_hidden,
+                                                  next_hidden_count,
+                                                  q)) {
+                                    continue;
+                                }
+                                if (!coord_in_list(ports, port_count, q)) {
+                                    ports[port_count++] = q;
+                                }
+                            }
+                            if (!hidden_port_connected(state.hidden,
+                                                       state.hidden_count,
+                                                       ports,
+                                                       port_count,
+                                                       state.tiles,
+                                                       state.tile_count)) {
+                                continue;
+                            }
                         }
 
                         canonicalize_result(&state, ctx->tile->lattice);
