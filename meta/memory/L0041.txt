@@ -1,0 +1,18 @@
+Differential vcomp events are event-local
+
+A vertex-completion event is not the same thing as one tile attachment.  One
+completion event starts with a chosen boundary vertex and may recurse through
+several tile attachments until that chosen vertex disappears from the boundary.
+During those intermediate attachments, the implementation should accumulate
+only event-local facts: which tiles were added during this completion and which
+vertices became newly interior during this completion.  The committed vcomp
+state, especially hidden and ports, should not be rewritten after every
+intermediate attach step.
+
+The actual state transition happens only at a candidate successful completion,
+when the target vertex is gone.  At that point hidden is extended by the
+newly-interior vertices from the event, consumed ports are old ports that became
+hidden, and gained ports are new-boundary vertices adjacent by event-local tile
+edges to the newly hidden constellation.  This event-local framing is the core
+reason differential vcomp can remain small and why the connectivity check does
+not need historical global tile data.

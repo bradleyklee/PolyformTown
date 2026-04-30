@@ -32,6 +32,20 @@ supports square, triangular, and tetrille-style tagged lattices.
 - Build: `make`
 - Full smoke test: `bash tests/smoke.sh`
 
+## Differential vertex completion state
+
+The vcomp pipeline carries boundary, hidden, and ports as vertex-set
+state.  A completion event may contain several tile attachments, but
+hidden and ports are committed only when the chosen target vertex
+disappears from the boundary.
+
+During a completion event, temporary event-local tile edges are used to
+check hidden connectivity and to discover gained ports.
+This event-local edge data is required even when aggregate tile
+history is not being returned.
+`track_tiles` controls persistent tile collection and output; it should
+not change acceptance correctness.
+
 ## Input data and outputs
 - Tile definitions live in `tiles/*.tile`.
 - A legacy compatibility sample lives in

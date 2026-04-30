@@ -1,0 +1,15 @@
+Live-boundary filtering changes the growth regime
+
+After the differential vcomp update, the hat completion counts split into two
+useful regimes.  All completions through n=15 appear to grow with a rough
+effective exponential base near 1.6, while live-boundary-only counts through
+n=20 grow much more slowly, around an observed effective base near 1.3.  The
+data are still small and noisy, but the qualitative difference is large enough
+to treat as a real signal.
+
+This matters because live-boundary filtering seems to reduce the effective
+branching rate, not merely remove a constant fraction of states.  If the
+full tile-surround horizon is around the low-to-mid 30s, live-only lookahead may
+remain in the low tens of thousands of states.  That would make memory pressure
+negligible and leave runtime per expansion as the main practical bottleneck for
+booting RL1 from RL0.

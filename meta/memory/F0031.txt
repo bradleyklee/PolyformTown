@@ -1,0 +1,14 @@
+Extract RL1 tile-surround constellations
+
+Use complete-enough RL0 completion data to surround an entire hat tile and emit
+candidate RL1 tile-surround constellations.  Track the number of distinct
+constellations, their canonical forms, and whether live-boundary pruning keeps
+the dataset small.  This is the next step from single-vertex completions toward
+runlevel data that describes whole-tile neighborhoods.
+
+The extraction should preserve the differential model: RL0 supplies local
+completion facts, but RL1 should record reproducible filesystem-backed data with
+metadata about tile, lattice, max hidden level, live-only setting,
+canonicalization version, source commands, and expected counts.  The output
+should be suitable for later recomputation and comparison, not just one-off
+experimentation.

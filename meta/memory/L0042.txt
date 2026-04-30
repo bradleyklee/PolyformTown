@@ -1,0 +1,14 @@
+Track tiles is not a correctness dependency
+
+`track_tiles` should control whether aggregate tile history is collected and
+returned for output or depiction.  It should not control whether vertex
+completion is correct.  A run with `track_tiles=0` must still have enough
+information to perform the differential update, including connectivity and port
+adjacency, but that information should be limited to the current completion
+event rather than a persistent history of all tiles in the state.
+
+The important distinction is between event-local tiles and aggregate trace
+tiles.  Event-local tiles are temporary working data used to build the edge graph
+for one completion event.  Trace tiles are optional payload used for richer
+output.  Correct counting should be identical with trace tile collection on or
+off, and parity tests should guard against mode-dependent drift.

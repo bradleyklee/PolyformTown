@@ -1,0 +1,13 @@
+Manual audit of differential completion examples
+
+Inspect representative completion traces by hand before trusting the new vcomp
+semantics completely.  Each trace should show previous boundary, previous
+hidden, previous ports, event-local tiles, newly hidden vertices, consumed
+ports, gained ports, next hidden, and next ports.  The goal is to make the
+state transition visible rather than relying only on aggregate counts.
+
+This audit is especially important around gained-port computation and base-case
+connectivity.  The current implementation appears to use event-new hidden
+vertices with event-local edges, which is probably the right interpretation, but
+small examples should verify that no ports are missed and no invalid completion
+realizations are accepted.

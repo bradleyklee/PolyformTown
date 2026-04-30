@@ -1,0 +1,12 @@
+Formalize the tile-surround constellation bound
+
+Write down the low-30s upper bound for surrounding a hat tile in terms of true
+internal vertices plus vertices that can appear between surrounding tiles.  This
+is not the naive bound obtained by multiplying the maximum single-vertex
+constellation by every vertex of the seed tile.  Adjacent vertex surrounds share
+structure, so the relevant bound is topological and should be much smaller.
+
+The working estimate is roughly 14 seed/internal vertices plus a small number of
+possible between-tile vertices under maximal topological hexagonal or heptagonal
+surround assumptions, giving a horizon around 32 to the mid-30s.  This should be
+made precise and then checked against generated surround data.

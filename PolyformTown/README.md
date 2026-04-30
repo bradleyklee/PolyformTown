@@ -1,4 +1,4 @@
-# PolyformTown V4.0
+# PolyformTown V5.0
 
 ## Goal
 
@@ -198,6 +198,16 @@ Run the project smoke test with:
 bash tests/smoke.sh
 ```
 
+Run the broader regression sweep with:
+
+```bash
+bash tests/comprehensive.sh
+```
+
+The comprehensive sweep includes `vcomp_parity`, which checks that
+tracked and untracked vcomp enumeration produce the same counts for
+small domino, chair, and hat cases.
+
 ## Count Examples
 
 Run with defaults (monomino, built-in `N`):
@@ -374,9 +384,15 @@ architecture is no longer limited to square geometry.
 
 ## Status
 
-V4.0 suspends in a stable, reproducible state with verified square and
-triangular workflows, and tetrille also works to memory limits.
+V5.0 suspends in a stable, reproducible state with verified square and
+triangular workflows, and tetrille also works to memory limits. 
+
+Completions around a vertex now follow highly constrained logic about 
+connected "constellations" of interior vertices. Sets of all vertex 
+completions graded by constellation vertex count grow slowly enough
+that the primary data of run levels zero and one can likely both be 
+found by sifting raw data generated on a personal computer. 
 
 Future directions include memory and performance refinement as well as
-analysis of the subspace of good hat polyforms that allow continued
-growth infinitely into fractal, aperiodic plane coverings.
+analysis of runlevels and their associated constellations. Proofs of
+interesting hat properties are close within reach.

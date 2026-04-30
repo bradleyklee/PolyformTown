@@ -1,0 +1,12 @@
+Full live-boundary lookahead to tile-surround horizon
+
+Compute live-boundary-only hat vcomp levels up to the estimated tile-surround
+horizon, probably around n=32 and possibly in the low-to-mid 30s.  Record counts,
+runtime, memory behavior, and any timeout/crash behavior.  The current growth
+estimate suggests this may be feasible because live-only counts appear to grow
+much more slowly than all completions.
+
+The purpose is to determine whether RL0 already reaches the full constellation
+size needed to build RL1 tile-surround data.  If the run succeeds, the resulting
+data should become a reproducible checkpoint with command lines, counts, and a
+clear distinction between all-completion and live-only modes.
