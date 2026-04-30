@@ -1,5 +1,5 @@
-## RL0 Hat Completions
+<h2>RL0 Hat Completions</h2>
 
-![RL0 Hat Completions](PolyformData/levelData/rl0/rl0_all.svg)
+<img src="./PolyformTown/levelData/rl0/rl0_all.svg" alt="RL0 Hat Completions" />
 
-*Figure: Run Level 0: Hat Vertex Figures and their Constellations.*
+<p><em>Figure: Base-level (RL0) completion set for the hat tile.</em></p>
