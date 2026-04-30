@@ -2,4 +2,4 @@
 
 <img src="./PolyformTown/levelData/rl0/rl0_all.svg" alt="RL0 Hat Completions" />
 
-<p><em>Figure: Base-level (RL0) completion set for the hat tile.</em></p>
+<p><em>Figure: Welcome to Run Level 0, Hat vertex figures and their constellations.</em></p>
