@@ -222,8 +222,6 @@ void run_vcomp_levels(const Tile *tile,
     VCompStateVec levels[VCOMP_MAX_LEVELS];
     StateSet level_sets[VCOMP_MAX_LEVELS];
     HashTable poly_seen[VCOMP_MAX_LEVELS];
-    (void)track_tiles;
-    int enum_track_tiles = 1;
 
     if (max_n >= VCOMP_MAX_LEVELS) max_n = VCOMP_MAX_LEVELS - 1;
 
@@ -238,8 +236,9 @@ void run_vcomp_levels(const Tile *tile,
     memset(&seed_state, 0, sizeof(seed_state));
     seed_state.poly.cycle_count = 1;
     seed_state.poly.cycles[0] = tile->base;
-    seed_state.tile_count = 1;
-    seed_state.tiles[0] = tile->base;
+    seed_state.tile_count = track_tiles ? 1 : 0;
+    if (track_tiles) seed_state.tiles[0] = tile->base;
+    seed_state.port_count = 0;
     sv_push(&levels[0], &seed_state);
     poly_hash_key_lattice(&seed_state.poly, tile->lattice, &seed_key);
     stateset_insert(&level_sets[0],
@@ -266,9 +265,7 @@ void run_vcomp_levels(const Tile *tile,
             if (vc < 0) continue;
 
             for (int j = 0; j < vc; j++) {
-                if (track_tiles &&
-                    tile->lattice == TILE_LATTICE_TETRILLE &&
-                    level > 0) {
+                if (level > 0) {
                     int allowed = 0;
                     for (int p = 0; p < levels[level].data[i].port_count; p++) {
                         if (coord_eq(verts[j], levels[level].data[i].ports[p])) {
@@ -290,7 +287,7 @@ void run_vcomp_levels(const Tile *tile,
                                        levels[level].data[i].tiles,
                                        levels[level].data[i].tile_count,
                                        max_n,
-                                       enum_track_tiles,
+                                       track_tiles,
                                        &raw);
 
                 for (int lv = level + 1; lv <= max_n; lv++) {

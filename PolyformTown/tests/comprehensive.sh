@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-set +e
+set -u -o pipefail
 
 i=1
 fails=0
+
 check_eq() {
   if [[ "$1" != "$2" ]]; then
     echo "FAIL [$i]: expected $2 got $1"
@@ -13,57 +14,84 @@ check_eq() {
   i=$((i+1))
 }
 
+check_cmd_eq() {
+  local expected="$1"
+  local actual
+  shift
+  actual=$("$@")
+  local status=$?
+  if [[ "$status" -ne 0 ]]; then
+    echo "FAIL [$i]: command exited $status: $*"
+    fails=$((fails+1))
+    i=$((i+1))
+    return
+  fi
+  check_eq "$actual" "$expected"
+}
+
 get_count() {
   tail -n1 | awk '{print $2}' | sed 's/count=//'
 }
 
+count_holes() {
+  awk '/^\[ *1/ {c++} END{print c+0}'
+}
+
+count_vcomp_aggregate_holes() {
+  awk 'prev == "Aggregate" && /^\[ *1/ {c++} {prev=$0} END{print c+0}'
+}
+
+export -f get_count count_holes count_vcomp_aggregate_holes
+
 # ---- POLY COUNT ----
-check_eq "$(./poly_count 10 tiles/monomino.tile | get_count)" "4655"
-check_eq "$(./poly_count 5  tiles/domino.tile   | get_count)" "2227"
-check_eq "$(./poly_count 4  tiles/chair.tile    | get_count)" "7142"
-check_eq "$(./poly_count 12 tiles/triangle.tile | get_count)" "3334"
-check_eq "$(./poly_count 8  tiles/hexagon.tile  | get_count)" "1448"
-check_eq "$(./poly_count 4  tiles/hh.tile       | get_count)" "1552"
-check_eq "$(./poly_count 9  tiles/kite.tile     | get_count)" "2917"
-check_eq "$(./poly_count 3  tiles/hat.tile      | get_count)" "459"
+check_cmd_eq "4655" bash -c './poly_count 10 tiles/monomino.tile | get_count'
+check_cmd_eq "2227" bash -c './poly_count 5  tiles/domino.tile   | get_count'
+check_cmd_eq "7142" bash -c './poly_count 4  tiles/chair.tile    | get_count'
+check_cmd_eq "3334" bash -c './poly_count 12 tiles/triangle.tile | get_count'
+check_cmd_eq "1448" bash -c './poly_count 8  tiles/hexagon.tile  | get_count'
+check_cmd_eq "1552" bash -c './poly_count 4  tiles/hh.tile       | get_count'
+check_cmd_eq "2917" bash -c './poly_count 9  tiles/kite.tile     | get_count'
+check_cmd_eq "459"  bash -c './poly_count 3  tiles/hat.tile      | get_count'
 
 # ---- POLY PRINT (holes only) ----
-check_eq "$(./poly_print 10 tiles/monomino.tile | grep '^\[ *1' | wc -l)" "195"
-check_eq "$(./poly_print 5  tiles/domino.tile   | grep '^\[ *1' | wc -l)" "69"
-check_eq "$(./poly_print 4  tiles/chair.tile    | grep '^\[ *1' | wc -l)" "634"
-check_eq "$(./poly_print 12 tiles/triangle.tile | grep '^\[ *1' | wc -l)" "108"
-check_eq "$(./poly_print 8  tiles/hexagon.tile  | grep '^\[ *1' | wc -l)" "13"
-check_eq "$(./poly_print 4  tiles/hh.tile       | grep '^\[ *1' | wc -l)" "54"
-check_eq "$(./poly_print 9  tiles/kite.tile     | grep '^\[ *1' | wc -l)" "141"
-check_eq "$(./poly_print 3  tiles/hat.tile      | grep '^\[ *1' | wc -l)" "94"
+check_cmd_eq "195" bash -c './poly_print 10 tiles/monomino.tile | count_holes'
+check_cmd_eq "69"  bash -c './poly_print 5  tiles/domino.tile   | count_holes'
+check_cmd_eq "634" bash -c './poly_print 4  tiles/chair.tile    | count_holes'
+check_cmd_eq "108" bash -c './poly_print 12 tiles/triangle.tile | count_holes'
+check_cmd_eq "13"  bash -c './poly_print 8  tiles/hexagon.tile  | count_holes'
+check_cmd_eq "54"  bash -c './poly_print 4  tiles/hh.tile       | count_holes'
+check_cmd_eq "141" bash -c './poly_print 9  tiles/kite.tile     | count_holes'
+check_cmd_eq "94"  bash -c './poly_print 3  tiles/hat.tile      | count_holes'
 
 # ---- POLY PRINT (hole removal) ----
-check_eq "$(./poly_print 3 tiles/chair.tile --live-only | wc -l)" "246"
-check_eq "$(./poly_print 2 tiles/tetL.tile  --live-only | wc -l)" "63"
-check_eq "$(./poly_print 2 tiles/hat.tile   --live-only | wc -l)" "16"
+check_cmd_eq "246" bash -c './poly_print 3 tiles/chair.tile --live-only | wc -l'
+check_cmd_eq "63"  bash -c './poly_print 2 tiles/tetL.tile  --live-only | wc -l'
+check_cmd_eq "16"  bash -c './poly_print 2 tiles/hat.tile   --live-only | wc -l'
 
 # ---- VCOMP COUNT ----
-check_eq "$(./vcomp_count 6 tiles/monomino.tile | get_count)" "30"
-check_eq "$(./vcomp_count 3 tiles/domino.tile   | get_count)" "38"
-check_eq "$(./vcomp_count 2 tiles/chair.tile    | get_count)" "46"
-check_eq "$(./vcomp_count 5 tiles/triangle.tile | get_count)" "21"
-check_eq "$(./vcomp_count 7 tiles/hexagon.tile  | get_count)" "13"
-check_eq "$(./vcomp_count 1 tiles/hh.tile       | get_count)" "27"
-check_eq "$(./vcomp_count 6 tiles/kite.tile     | get_count)" "85"
-check_eq "$(./vcomp_count 4 tiles/hat.tile      | get_count)" "36"
+check_cmd_eq "30" bash -c './vcomp_count 6 tiles/monomino.tile | get_count'
+check_cmd_eq "29" bash -c './vcomp_count 3 tiles/domino.tile   | get_count'
+check_cmd_eq "25" bash -c './vcomp_count 2 tiles/chair.tile    | get_count'
+check_cmd_eq "21" bash -c './vcomp_count 5 tiles/triangle.tile | get_count'
+check_cmd_eq "13" bash -c './vcomp_count 7 tiles/hexagon.tile  | get_count'
+check_cmd_eq "27" bash -c './vcomp_count 1 tiles/hh.tile       | get_count'
+check_cmd_eq "85" bash -c './vcomp_count 6 tiles/kite.tile     | get_count'
+check_cmd_eq "13" bash -c './vcomp_count 4 tiles/hat.tile      | get_count'
+
+# ---- VCOMP TRACK PARITY ----
+check_cmd_eq "PASS parity tiles/domino.tile
+PASS parity tiles/chair.tile
+PASS parity tiles/hat.tile" ./vcomp_parity
 
 # ---- VCOMP PRINT (holes only) ----
-check_eq "$(./vcomp_print 6 tiles/monomino.tile | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 3 tiles/domino.tile   | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 2 tiles/chair.tile    | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 5 tiles/triangle.tile | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 7 tiles/hexagon.tile  | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 1 tiles/hh.tile       | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 6 tiles/kite.tile     | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "0"
-check_eq "$(./vcomp_print 4 tiles/hat.tile      | awk '/^Aggregate$/{getline;print}' | grep '^\[ *1' | wc -l)" "11"
-
-
-
+check_cmd_eq "0" bash -c './vcomp_print 6 tiles/monomino.tile | count_vcomp_aggregate_holes'
+check_cmd_eq "0" bash -c './vcomp_print 3 tiles/domino.tile   | count_vcomp_aggregate_holes'
+check_cmd_eq "0" bash -c './vcomp_print 2 tiles/chair.tile    | count_vcomp_aggregate_holes'
+check_cmd_eq "0" bash -c './vcomp_print 5 tiles/triangle.tile | count_vcomp_aggregate_holes'
+check_cmd_eq "0" bash -c './vcomp_print 7 tiles/hexagon.tile  | count_vcomp_aggregate_holes'
+check_cmd_eq "0" bash -c './vcomp_print 1 tiles/hh.tile       | count_vcomp_aggregate_holes'
+check_cmd_eq "0" bash -c './vcomp_print 6 tiles/kite.tile     | count_vcomp_aggregate_holes'
+check_cmd_eq "11" bash -c './vcomp_print 4 tiles/hat.tile      | count_vcomp_aggregate_holes'
 
 if [[ "$fails" -gt 0 ]]; then
   echo "TOTAL FAILS: $fails"

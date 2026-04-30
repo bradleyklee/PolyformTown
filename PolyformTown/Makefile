@@ -9,7 +9,7 @@ CORE = $(SRC)/core/cycle.o $(SRC)/core/tile.o $(SRC)/core/hash.o \
 POLY_SURFACE = $(SRC)/throughput/vcomp.o $(SRC)/throughput/poly_pipeline.o
 VCOMP_SURFACE = $(SRC)/throughput/vcomp.o $(SRC)/throughput/vcomp_pipeline.o
 
-all: poly_count poly_print vcomp_count vcomp_print imgtable \
+all: poly_count poly_print vcomp_count vcomp_print vcomp_parity imgtable \
 	tile_to_imgtable rl0_generate rl0_depict rl0_data
 
 poly_count: $(SRC)/usage/count_poly.o $(CORE) $(POLY_SURFACE)
@@ -25,6 +25,7 @@ clean:
 	rm -f $(SRC)/*.o $(SRC)/core/*.o $(SRC)/rl0/*.o \
 		$(SRC)/usage/*.o $(SRC)/throughput/*.o \
 		poly_count poly_print vcomp_count count_vcomp vcomp_print \
+		vcomp_parity \
 		imgtable tile_to_imgtable rl0_generate rl0_depict
 
 vcomp_count: $(SRC)/usage/count_vcomp.o $(CORE) $(VCOMP_SURFACE)
@@ -32,6 +33,9 @@ vcomp_count: $(SRC)/usage/count_vcomp.o $(CORE) $(VCOMP_SURFACE)
 
 count_vcomp: vcomp_count
 	cp vcomp_count count_vcomp
+
+vcomp_parity: $(SRC)/usage/check_vcomp_parity.o $(CORE) $(VCOMP_SURFACE)
+	$(CC) $(CFLAGS) -o $@ $(SRC)/usage/check_vcomp_parity.o $(CORE) $(VCOMP_SURFACE)
 
 vcomp_print: $(SRC)/usage/print_vcomp.o $(CORE) $(VCOMP_SURFACE)
 	$(CC) $(CFLAGS) -o $@ $(SRC)/usage/print_vcomp.o $(CORE) $(VCOMP_SURFACE)
